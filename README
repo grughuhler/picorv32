@@ -1,0 +1,18 @@
+This directory contains a simple SoC that uses the risc-v (32-bit)
+core from https://github.com/YosysHQ/picorv32.  File picorv32.v
+is from there.
+
+The project targets the Tang Nano 9K FPGA development board that
+contains a Gowin GW1NR-9LV FPGA.  It is intended to be very
+simple.
+
+It was built using the educational version of the Gowin IDE and
+tool chain, 1.9.9 Beta-4 Education Build(68283).
+
+The Gowin IDE should build it.  See the README in directory c_code for
+information on how to build the software.  The program already in
+mem_init.v causes the LEDs on the board to count.  S1 is the reset
+button.
+
+It contains only an SRAM and an LED target.  The SRAM is initialized by
+the Verilog build process.  This is how the software is "loaded".

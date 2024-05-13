@@ -1,0 +1,24 @@
+This directory contains a tiny and simple C program that runs on the
+picorv32 core on the simple SoC.
+
+The build process is very limited.  See the Makefile.  It creates
+file mem_init.v which is to be included in the Verilog build and
+initializes the sram (to contain a simple program).
+
+Don't use any global variables or standard library functions.  Only
+the .text section is handled.  There are no checks for running
+beyond memory.
+
+You will need the gcc cross compiler for riscv.  On Ubuntu 22.04,
+
+sudo apt install gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf
+
+Basically, "make" and be sure mem_init.v gets included in sram.v
+
+Sorry this is not more complete...
+
+Hint:
+
+   riscv64-unknown-elf-objdump -d prog
+
+will disassemble the code.

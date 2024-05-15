@@ -15,20 +15,6 @@
 unsigned long mem[MEMSIZE];
 unsigned long test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
 
-/* The picorv32 core implements several counters and
-   instructions to access them.  These are part of the
-   risc-v specification.  Function readtime uses one
-   of them.
-*/
-
-static inline unsigned int readtime(void)
-{
-  unsigned int val;
-  unsigned long long jj;
-  asm volatile("rdtime %0" : "=r" (val));
-  return val;
-
-}
 
 /* A simple memory test.  Delete this and also array mem
    above to free much of the SRAM for other things
@@ -46,15 +32,7 @@ int mem_test (void)
 
     for (i = 0; i < MEMSIZE; i++) {
       val_read = mem[i];
-      if (val_read != test_vals[test]) {
-	uart_print_hex(val_read);
-	uart_puts(" != ");
-	uart_print_hex(test_vals[test]);
-	uart_puts(", i = ");
-	uart_print_hex(i);
-	uart_puts("\r\n");
-	errors += 1;
-      }
+      if (val_read != test_vals[test]) errors += 1;
     }
   }
 
@@ -62,24 +40,79 @@ int mem_test (void)
 
   for (i = 0; i < MEMSIZE; i++) {
     val_read = mem[i];
-    if (val_read != i + (i << 17)) {
-      uart_print_hex(val_read);
-      uart_puts(" != ");
-      uart_print_hex(i + (i << 17));
-      uart_puts(", i = ");
-      uart_print_hex(i);
-      uart_puts("\r\n");
-      errors += 1;
-    }
+    if (val_read != i + (i << 17)) errors += 1;
   }
 
-  return errors;
+  return(errors);
 }
+
+/* The picorv32 core implements several counters and
+   instructions to access them.  These are part of the
+   risc-v specification.  Function readtime uses one
+   of them.
+*/
+
+static inline unsigned int readtime(void)
+{
+  unsigned int val;
+  unsigned long long jj;
+  asm volatile("rdtime %0" : "=r" (val));
+  return val;
+
+}
+
+void endian_test(volatile unsigned int *addr)
+{
+  volatile unsigned char *cp0, *cp3;
+  char byte0, byte3;
+  unsigned int i, ok;
+
+  cp0 = (volatile unsigned char *) addr;
+  cp3 = cp0 + 3;
+  *addr = 0x44332211;
+  byte0 = *cp0;
+  byte3 = *cp3;
+  *cp3 = 0xab;
+  i = *addr;
+
+  ok = (byte0 == 0x11) && (byte3 == 0x44) && (i == 0xab332211);
+  uart_puts("\r\nEndian test: at ");
+  uart_print_hex((unsigned int) addr);
+  uart_puts(", byte0: ");
+  uart_print_hex((unsigned int) byte0);
+  uart_puts(", byte3: ");
+  uart_print_hex((unsigned int) byte3);
+  uart_puts(",\r\n     word: ");
+  uart_print_hex(i);
+  if (ok)
+    uart_puts(" [PASSED]\r\n");
+  else
+    uart_puts(" [FAILED]\r\n");
+}
+
+void uart_rx_test(void)
+{
+  char buf[5];
+  int i;
+  
+  uart_puts("Type 4 characters (they will echo): ");
+  for (i = 0; i < 4; i++) {
+    buf[i] = uart_getchar();
+    uart_putchar(buf[i]);
+  }
+  buf[4] = 0;
+  uart_puts("\r\nUART read: ");
+  uart_puts(buf);
+  uart_puts("\r\n");
+}
+
 
 int main()
 {
+  int i;
   unsigned char v, ch;
-  unsigned int i;
+
+  set_leds(6);
 
   /* These are interesting to see on the logic analyzer */
   cdt_write3(0x1); // addr 0x80000013
@@ -92,21 +125,15 @@ int main()
   cdt_write(0x00000001);
 
   uart_set_div(234); // 27000000/115200
+  endian_test((volatile unsigned int *)&i);
 
-  set_leds(6);
-
-  /* Run the mem_test, timing it */
-  
-  uart_puts("\r\ntime is ");
-  uart_print_hex(readtime());
-  uart_puts(", mem_test = ");
-  uart_print_hex(mem_test());
-  uart_puts(", time is ");
-  uart_print_hex(readtime());
-  uart_puts("\r\n");
+  /* Run the mem_test */
+  if (mem_test())
+    uart_puts("memory test FAILED.\r\n");
+  else
+    uart_puts("memory test PASSED.\r\n");
 
   /* Play with the CDT */
-
   cdt_write(0xde000000);
   uart_puts("CDT = ");
   uart_print_hex(cdt_read());
@@ -123,17 +150,11 @@ int main()
   uart_print_hex(cdt_read());
   uart_puts("\r\n");
   
-  /* Test UART input-- type 4 characters */
+  /* Test UART input */
+  uart_rx_test();
   
-  uart_puts("Get 4 chars: ");
-  for (i = 0; i < 4; i++) {
-    ch = uart_getchar();
-    uart_putchar(':');
-    uart_putchar(ch);
-    uart_putchar(':');
-  }
-
-  uart_puts("\r\n");
+  uart_puts("\r\nPress a key to start LED counting and lots of prints:\r\n");
+  (void) uart_getchar();
 
   /* Print stuff over and over and have the LED count,
      both writing and reading the LED.
@@ -161,7 +182,7 @@ int main()
     uart_print_hex(readtime());
     uart_puts("\r\n");
 
-    cdt_delay(27000000/2);
+    cdt_delay(27000000);
     i += 1;
   }
   

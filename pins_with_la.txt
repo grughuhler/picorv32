@@ -1,0 +1,24 @@
+
+
+Scopy Signal Scopy Pin FPGA Pin FPGA Signal
+--------------------------------------------
+ clk       |    D8    |   53   | clk_out
+ instr     |    D9    |   51   | mem_instr
+ valid     |    D10   |   42   | mem_valid
+ ready     |    D11   |   41   | mem_ready
+ --------------------------------------------
+ w3        |    D12   |   35   | mem_wstrb[3]
+ w2        |    D13   |   40   | mem_wstrb[2]
+ w1        |    D14   |   34   | mem_wstrb[1]
+ w0        |    D15   |   33   | mem_wstrb[0]
+---------------------------------------------
+ B25       |    D0    |   30   | mem_wdata[24]
+ B24       |    D1    |   29   | mem_wdata[24]
+ B17       |    D2    |   28   | mem_wdata[16]
+ B16       |    D3    |   27   | mem_wdata[16]
+ ---------------------------------------------
+ B09       |    D4    |   26   | mem_wdata[08]
+ B08       |    D5    |   25   | mem_wdata[08]
+ B01       |    D6    |   39   | mem_wdata[00]
+ B00       |    D7    |   36   | mem_wdata[00]
+ 

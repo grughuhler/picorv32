@@ -335,8 +335,12 @@ module sram
       .din(sram_data_i[7:0])
       );
 
-   always @(posedge clk)
-     if (sram_sel) ready <= 1'b1;
-     else ready <= 1'b0;
+   always @(posedge clk) 
+     if (sram_sel)
+        ready <= 1'b1;
+     else
+        ready <= 1'b0;
+
+
    
 endmodule // sram

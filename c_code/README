@@ -24,7 +24,7 @@ mem_init.v.
 
 Hints:
 
-  riscv64-unknown-elf-objdump -D prog.elf will disassemble the code.
+  riscv64-unknown-elf-objdump -d prog.elf will disassemble the code.
 
   riscv64-unknown-elf-objdump -x prog.elf shows sections and addresses.
 

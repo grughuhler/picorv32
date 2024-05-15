@@ -11,17 +11,18 @@ It includes:
   
 Built and tested with the Gowin Eductional tool set on Tang Nano 9K.
 
-The picorv32 core has a very simple memory interface.  See https://github.com/YosysHQ/picorv32
+The picorv32 core has a very simple memory interface.
+See https://github.com/YosysHQ/picorv32
 
 In this SoC, slave (target) device has signals:
 
-   * SLAVE_sel - this is asserted when mem_valid == 1 and mem_addr targets the slave.  It
-     "tells" the slave that it is active.  It must accept a write for provide data for a
-     read.
+   * SLAVE_sel - this is asserted when mem_valid == 1 and mem_addr targets the slave.
+     It "tells" the slave that it is active.  It must accept a write for provide data
+     for a read.
    * SLAVE_ready - this is asserted by the slave when it is done with the transaction.
      Core signal mem_ready is the OR of all of the SLAVE_ready signals.
-   * Core mem_addr, mem_wdata, and mem_wstrb can be passed to all slaves directly.  The
-     latter is a byte lane enable for writes.
+   * Core mem_addr, mem_wdata, and mem_wstrb can be passed to all slaves directly.
+     The latter is a byte lane enable for writes.
    * Each slave drives SLAVE_data_o.  The core's mem_rdata is formed by selecting the
      correct SLAVE_data_o based on SLAVE_sel.
 */
@@ -36,7 +37,14 @@ module top (
             output wire       mem_instr, 
             output wire       mem_valid,
             output wire       mem_ready,
-            output wire [3:0] data,
+            output wire       b25,
+            output wire       b24,
+            output wire       b17,
+            output wire       b16,
+            output wire       b09,
+            output wire       b08,
+            output wire       b01,
+            output wire       b00,
             output wire [3:0] mem_wstrb
             );
 
@@ -71,10 +79,14 @@ module top (
 
    // Assigns for externak logic analyzer connction
    assign clk_out = clk;
-   assign data[0] = mem_wdata[24];
-   assign data[1] = mem_wdata[16];
-   assign data[2] = mem_wdata[8];
-   assign data[3] = mem_wdata[0];
+   assign b25 = mem_wdata[25];
+   assign b24 = mem_wdata[24];
+   assign b17 = mem_wdata[17];
+   assign b16 = mem_wdata[16];
+   assign b09 = mem_wdata[9];
+   assign b08 = mem_wdata[8];
+   assign b01 = mem_wdata[1];
+   assign b00 = mem_wdata[0];
 
    // Establish memory map for all slaves
    assign sram_sel = mem_valid && (mem_addr < 32'h00002000);  // sram from 0 - 0x1fff
@@ -83,7 +95,7 @@ module top (
    assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
 
    // Core can proceed regardless of *which* slave was targetted and is now ready.
-   assign mem_ready = sram_ready | leds_ready | uart_ready | cdt_ready;
+   assign mem_ready = mem_valid & (sram_ready | leds_ready | uart_ready | cdt_ready);
 
 
    // Select which slave's output data is to be fed to core.
@@ -94,6 +106,8 @@ module top (
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
 
+   // clk_osc is 27 MHz from can oscillator on Tang Nano 9K
+   // clk is from PLL.  It's the system clock.  4.493 MHz.
    reset_control reset_controller
      (
       .clk(clk),

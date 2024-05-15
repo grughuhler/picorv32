@@ -15,6 +15,12 @@
 unsigned long mem[MEMSIZE];
 unsigned long test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
 
+/* The picorv32 core implements several counters and
+   instructions to access them.  These are part of the
+   risc-v specification.  Function readtime uses one
+   of them.
+*/
+
 static inline unsigned int readtime(void)
 {
   unsigned int val;
@@ -24,13 +30,9 @@ static inline unsigned int readtime(void)
 
 }
 
-void waste_time (int n)
-{
-  volatile int i;
-  // An additional iteration takes about 0.556 uSec @ 27MHz
-  while (n-- > 0) {i;}
-    //    asm("nop");
-}
+/* A simple memory test.  Delete this and also array mem
+   above to free much of the SRAM for other things
+*/
 
 int mem_test (void)
 {
@@ -79,6 +81,7 @@ int main()
   unsigned char v, ch;
   unsigned int i;
 
+  /* These are interesting to see on the logic analyzer */
   cdt_write3(0x1); // addr 0x80000013
   cdt_write2(0x0); // addr 0x80000012
   cdt_write1(0x1); // addr 0x80000011
@@ -92,6 +95,8 @@ int main()
 
   set_leds(6);
 
+  /* Run the mem_test, timing it */
+  
   uart_puts("\r\ntime is ");
   uart_print_hex(readtime());
   uart_puts(", mem_test = ");
@@ -100,24 +105,25 @@ int main()
   uart_print_hex(readtime());
   uart_puts("\r\n");
 
+  /* Play with the CDT */
+
   cdt_write(0xde000000);
   uart_puts("CDT = ");
   uart_print_hex(cdt_read());
   uart_puts(" and then ");
-  waste_time(1000);
   uart_print_hex(cdt_read());
   uart_puts("\r\n");
 
-  cdt_write(0x7654);
+  cdt_write(0xfeee);
   uart_puts("CDT = ");
   uart_print_hex(cdt_read());
   uart_puts(" and then ");
-  waste_time(1);
   uart_print_hex(cdt_read());
   uart_puts(" and then ");
-  waste_time(1);
   uart_print_hex(cdt_read());
   uart_puts("\r\n");
+  
+  /* Test UART input-- type 4 characters */
   
   uart_puts("Get 4 chars: ");
   for (i = 0; i < 4; i++) {
@@ -128,6 +134,10 @@ int main()
   }
 
   uart_puts("\r\n");
+
+  /* Print stuff over and over and have the LED count,
+     both writing and reading the LED.
+  */
 
   i = 0;
   while (1) {

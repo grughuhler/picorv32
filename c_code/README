@@ -1,24 +1,31 @@
-This directory contains a tiny and simple C program that runs on the
+This directory contains a simple C program that runs on the
 picorv32 core on the simple SoC.
 
-The build process is very limited.  See the Makefile.  It creates
-file mem_init.v which is to be included in the Verilog build and
-initializes the sram (to contain a simple program).
+The build environment is limited. Some things to know:
 
-Don't use any global variables or standard library functions.  Only
-the .text section is handled.  There are no checks for running
-beyond memory.
+* BSS (data not explicitly initialized) is NOT set to zero.
+* No standard library functions are available.
+* It's possible I missed some section type in the linker
+  command file.
+* The SoC has only 8192 bytes of SRAM so program cannot be
+  large.
+* There is no provision for interrupt handlers.
 
 You will need the gcc cross compiler for riscv.  On Ubuntu 22.04,
 
-sudo apt install gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf
+  sudo apt install gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf
 
-Basically, "make" and be sure mem_init.v gets included in sram.v
+Basically, edit main.c and "make".  This will create mem_init.v in the
+Verilog source directory-- so you need to rebuild and reload the FPGA
+bitfile.
 
-Sorry this is not more complete...
+Program conv_to_init inputs a binary version of the image and creates
+mem_init.v.
 
-Hint:
+Hints:
 
-   riscv64-unknown-elf-objdump -d prog
+  riscv64-unknown-elf-objdump -D prog.elf will disassemble the code.
 
-will disassemble the code.
+  riscv64-unknown-elf-objdump -x prog.elf shows sections and addresses.
+
+  riscv64-unknown-elf-nm --numeric-sort shows symbols and addresses.

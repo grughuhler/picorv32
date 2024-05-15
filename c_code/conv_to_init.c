@@ -59,10 +59,18 @@ int main(int argc, char **argv)
     }
   }
 
+  fclose(fp);
+
   // complete one if in progress
   if (index != ROWLEN -1) {
     print_init(n);
     n += 1;
+  }
+
+  if (n >= 0x40) {
+    fprintf(stderr, "ERROR: PROGRAM IS TOO LARGE, greater than 8192 bytes\n");
+    fprintf(stderr, "It must be LESS THAN 8192 to leave room for the stack\n");
+    return(EXIT_FAILURE);
   }
 
   for (i = n; i < 0x40; i++) {
@@ -73,7 +81,6 @@ int main(int argc, char **argv)
   printf("// count = %d, index = %d\n", count, index);
 
 
-  fclose(fp);
 
   return EXIT_SUCCESS;
 }

@@ -6,6 +6,8 @@ It includes:
      * the picorv32 core
      * An 8192 byte SRAM which is initialzed within the Verilog.
      * A module to read/write LEDs on the Gowin Tang Nano 9K
+     * A wrapped version of the UART from picorv32's picosoc.
+     * A 32-bit count down timer.
   
 Built and tested with the Gowin Eductional tool set on Tang Nano 9K.
 
@@ -27,11 +29,14 @@ In this SoC, slave (target) device has signals:
 module top (
             input wire        clk,
             input wire        reset_button_n,
+            input wire        uart_rx,
+            output wire       uart_tx,
             output wire [5:0] leds,
             output wire       clk_out, // This and below are for debug.
             output wire       mem_instr, 
             output wire       mem_valid,
             output wire       mem_ready,
+            output wire [3:0] data,
             output wire [3:0] mem_wstrb
             );
 
@@ -43,7 +48,7 @@ module top (
    parameter [0:0] ENABLE_IRQ_QREGS = 0;
 
    parameter integer          MEMBYTES = 8192;      // This is not easy to change
-   parameter [31:0] STACKADDR = (MEMBYTES);   // Grows down.  Software should set it.
+   parameter [31:0] STACKADDR = (MEMBYTES);         // Grows down.  Software should set it.
    parameter [31:0] PROGADDR_RESET = 32'h0000_0000;
    parameter [31:0] PROGADDR_IRQ = 32'h0000_0000;
 
@@ -53,23 +58,39 @@ module top (
    wire [31:0]                mem_rdata;
    wire                       leds_sel;
    wire                       leds_ready;
+   wire [31:0]                leds_data_o;
    wire                       sram_sel;
    wire                       sram_ready;
    wire [31:0]                sram_data_o;
-   wire [31:0]                leds_data_o;
+   wire                       cdt_sel;
+   wire                       cdt_ready;
+   wire [31:0]                cdt_data_o;
+   wire                       uart_sel;
+   wire [31:0]                uart_data_o;
+   wire                       uart_ready;
 
+   // Assigns for externak logic analyzer connction
    assign clk_out = clk;
+   assign data[0] = mem_wdata[24];
+   assign data[1] = mem_wdata[16];
+   assign data[2] = mem_wdata[8];
+   assign data[3] = mem_wdata[0];
 
    // Establish memory map for all slaves
+   assign sram_sel = mem_valid && (mem_addr < 32'h00002000);  // sram from 0 - 0x1fff
    assign leds_sel = mem_valid && (mem_addr == 32'h80000000);
-   assign sram_sel = mem_valid && (mem_addr < 32'h00002000);  // sram fro 0 to 0x1fff.
+   assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008); // 0x80000008 - 0x8000000f
+   assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
 
    // Core can proceed regardless of *which* slave was targetted and is now ready.
-   assign mem_ready = sram_ready | leds_ready;
+   assign mem_ready = sram_ready | leds_ready | uart_ready | cdt_ready;
+
 
    // Select which slave's output data is to be fed to core.
-   assign mem_rdata = sram_ready ? sram_data_o :
-                              leds_ready ? leds_data_o : 32'h0;
+   assign mem_rdata = sram_sel ? sram_data_o :
+                      leds_sel ? leds_data_o :
+                      uart_sel ? uart_data_o :
+                      cdt_sel  ? cdt_data_o  : 32'h0;
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
 
@@ -80,10 +101,33 @@ module top (
       .reset_n(reset_n)
       );
 
+    uart_wrap uart (
+                  .clk(clk),
+                  .reset_n(reset_n),
+                  .uart_tx(uart_tx),
+                  .uart_rx(uart_rx),
+                  .uart_sel(uart_sel),
+                  .addr(mem_addr[3:0]),
+                  .uart_wstrb(mem_wstrb),
+                  .uart_di(mem_wdata),
+                  .uart_do(uart_data_o),
+                  .uart_ready(uart_ready)
+    );
+
+    countdown_timer cdt (
+                        .clk(clk),
+                        .reset_n(reset_n),
+                        .cdt_sel(cdt_sel),
+                        .cdt_data_i(mem_wdata),
+                        .we(mem_wstrb),
+                        .cdt_ready(cdt_ready),
+                        .cdt_data_o(cdt_data_o)
+                  );
+
    sram #(.ADDRWIDTH(13)) memory
      (
       .clk(clk),
-      .resetn(1'b1),
+      .resetn(reset_n),
       .sram_sel(sram_sel),
       .wstrb(mem_wstrb),
       .addr(mem_addr[12:0]),
@@ -95,8 +139,9 @@ module top (
    tang_leds soc_leds
      (
       .clk(clk),
+      .reset_n(reset_n),
       .leds_sel(leds_sel),
-      .leds_data_i(mem_wdata[5:0]),
+      .leds_data_i(mem_wdata[29:24]),
        .we(mem_wstrb[0]),
       .leds_ready(leds_ready),
       .leds_data_o(leds_data_o)
@@ -129,3 +174,6 @@ module top (
         );
 
 endmodule // top
+
+
+

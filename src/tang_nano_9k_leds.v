@@ -5,7 +5,8 @@
 // Tang Nano 9K board.  It can also read this register,
 
 module tang_leds (
-                  input wire         clk, 
+                  input wire         clk,
+                  input wire         reset_n,
                   input wire         leds_sel,
                   input wire [5:0]   leds_data_i,
                   input wire         we,
@@ -22,15 +23,17 @@ module tang_leds (
 
    // Count to delay asserting leds_ready.  This is not necessary.
    // I am playing with seeing what happens when a slave is slow.
-   always @(posedge clk)
-     if (~|wait_count)
-       begin
-          if (leds_sel)
-            begin
-               wait_count <= wait_count + 1;
-               if (we) leds <= leds_data_i;
-            end
-       end
+   always @(posedge clk or negedge reset_n)
+     if (!reset_n) begin
+        leds <= 'b0;
+        wait_count <= 'b0;
+     end
+     else if (~|wait_count) begin
+        if (leds_sel) begin
+           wait_count <= wait_count + 1;
+           if (we) leds <= leds_data_i;
+        end
+     end
      else
        wait_count <= wait_count + 1;
 

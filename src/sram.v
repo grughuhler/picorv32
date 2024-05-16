@@ -17,9 +17,9 @@ module sram
  
    // This is the memory initialization file formed by program conv_to_init.
    // Be sure this file rebuilds if the include file is changed.
-   `include "mem_init.v"
+`include "mem_init.v"
 
-   reg ready = 1'b0;
+   reg                         ready = 1'b0;
 
    assign sram_ready = ready;
    
@@ -100,7 +100,7 @@ module sram
       .ad(addr[12:2]),
       .din(sram_data_i[31:24])
       );
-
+   
    Gowin_SP #(
               .INIT_RAM_00(RAM2_00),
               .INIT_RAM_01(RAM2_01),
@@ -167,7 +167,7 @@ module sram
               .INIT_RAM_3E(RAM2_3E),
               .INIT_RAM_3F(RAM2_3F)
               )
-     gmem2
+   gmem2
      (
       .dout(sram_data_o[23:16]),
       .clk(clk),
@@ -245,7 +245,7 @@ module sram
               .INIT_RAM_3E(RAM1_3E),
               .INIT_RAM_3F(RAM1_3F)
               )
-     gmem1
+   gmem1
      (
       .dout(sram_data_o[15:8]),
       .clk(clk),
@@ -324,23 +324,21 @@ module sram
               .INIT_RAM_3F(RAM0_3F)
               )
      gmem0
-     (
-      .dout(sram_data_o[7:0]),
-      .clk(clk),
-      .oce(1'b1),
-      .ce(sram_sel),
-      .reset(~resetn),
-      .wre(wstrb[0]),
-      .ad(addr[12:2]),
-      .din(sram_data_i[7:0])
-      );
+       (
+        .dout(sram_data_o[7:0]),
+        .clk(clk),
+        .oce(1'b1),
+        .ce(sram_sel),
+        .reset(~resetn),
+        .wre(wstrb[0]),
+        .ad(addr[12:2]),
+        .din(sram_data_i[7:0])
+        );
 
    always @(posedge clk) 
      if (sram_sel)
         ready <= 1'b1;
      else
         ready <= 1'b0;
-
-
    
 endmodule // sram

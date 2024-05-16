@@ -106,6 +106,90 @@ void uart_rx_test(void)
   uart_puts("\r\n");
 }
 
+/* la_functions are useful for looking at the bus using a logic
+   analyzer.
+*/
+
+void la_wtest(void)
+{
+  unsigned int v;
+  volatile unsigned int *ip = (volatile unsigned int *) &v;
+  volatile unsigned short *sp = (volatile unsigned short *) &v;
+  volatile unsigned char *cp = (volatile unsigned char *) &v;
+
+  *ip = 0x03020100;  // addr 0x00
+
+  *sp = 0x0302;      // addr 0x00
+  *(sp+1) = 0x0100;  // addr 0x02
+
+  *cp = 0x03;        // addr 0x00
+  *(cp+1) = 0x02;    // addr 0x01
+  *(cp+2) = 0x01;    // addr 0x02
+  *(cp+3) = 0x00;    // addr 0x03
+}
+
+
+void la_rtest(void)
+{
+  unsigned int v;
+  volatile unsigned int *ip = (volatile unsigned int *) &v;
+  volatile unsigned short *sp = (volatile unsigned short *) &v;
+  volatile unsigned char *cp = (volatile unsigned char *) &v;
+
+  *ip = 0x03020100;  // addr 0x00
+
+  *ip;     // addr 0x00
+
+  *sp;     // addr 0x00
+  *(sp+1); // addr 0x02
+
+  *cp;     // addr 0x00
+  *(cp+1); // addr 0x01
+  *(cp+2); // addr 0x02
+  *(cp+3); // addr 0x03
+}
+
+
+void cdt_test(void)
+{
+  unsigned int val;
+  unsigned int test_errors = 0;
+  
+  // If register is little-endian, write to 0x80000013 should set
+  // the MSB,  Does it?
+
+  cdt_wbyte3(0xff);
+  val = cdt_read();
+  if ((val == 0xff000000) || (val < 0xfe000000)) test_errors = 1;
+
+  // Write zero to most significant half-word.
+  cdt_whalf2(0);
+  val = cdt_read();
+  if (val > 0xffff) test_errors |= 2;
+
+  uart_puts("Countdown timer test ");
+  if (test_errors) {
+    uart_puts("FAILED, mask = ");
+    uart_print_hex(test_errors);
+    uart_puts("\r\n");
+  } else {
+    uart_puts("PASSED\r\n");
+  }
+  
+#if 0
+  /* These are interesting to see on the logic analyzer */
+  cdt_wbyte3(0x3);       // addr 0x80000013
+  cdt_wbyte2(0x2);       // addr 0x80000012
+  cdt_wbyte1(0x1);       // addr 0x80000011
+  cdt_wbyte0(0x0);       // addr 0x80000010
+  cdt_whalf2(0x0302);    // addr 0x80000012
+  cdt_whalf0(0x0100);    // addr 0x80000010
+  cdt_write(0x00010203); // addr 0x80000010
+  cdt_write(0x01020300); // addr 0x80000010
+  cdt_write(0x02030001); // addr 0x80000010
+  cdt_write(0x03000102); // addr 0x80000010
+#endif
+}
 
 int main()
 {
@@ -113,18 +197,10 @@ int main()
   unsigned char v, ch;
 
   set_leds(6);
+  la_wtest();
+  la_rtest();
 
-  /* These are interesting to see on the logic analyzer */
-  cdt_write3(0x1); // addr 0x80000013
-  cdt_write2(0x0); // addr 0x80000012
-  cdt_write1(0x1); // addr 0x80000011
-  cdt_write0(0x1); // addr 0x80000010
-  cdt_write(0x01000000);
-  cdt_write(0x00010000);
-  cdt_write(0x00000100);
-  cdt_write(0x00000001);
-
-  uart_set_div(234); // 27000000/115200
+  uart_set_div(234); /* 27000000/115200 */
   endian_test((volatile unsigned int *)&i);
 
   /* Run the mem_test */
@@ -133,22 +209,7 @@ int main()
   else
     uart_puts("memory test PASSED.\r\n");
 
-  /* Play with the CDT */
-  cdt_write(0xde000000);
-  uart_puts("CDT = ");
-  uart_print_hex(cdt_read());
-  uart_puts(" and then ");
-  uart_print_hex(cdt_read());
-  uart_puts("\r\n");
-
-  cdt_write(0xfeee);
-  uart_puts("CDT = ");
-  uart_print_hex(cdt_read());
-  uart_puts(" and then ");
-  uart_print_hex(cdt_read());
-  uart_puts(" and then ");
-  uart_print_hex(cdt_read());
-  uart_puts("\r\n");
+  cdt_test();
   
   /* Test UART input */
   uart_rx_test();

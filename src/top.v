@@ -77,21 +77,25 @@ module top (
    wire [31:0]                uart_data_o;
    wire                       uart_ready;
 
-   // Assigns for externak logic analyzer connction
+   // Assigns for external logic analyzer connction
    assign clk_out = clk;
-   assign b25 = mem_wdata[25];
-   assign b24 = mem_wdata[24];
-   assign b17 = mem_wdata[17];
-   assign b16 = mem_wdata[16];
-   assign b09 = mem_wdata[9];
-   assign b08 = mem_wdata[8];
-   assign b01 = mem_wdata[1];
-   assign b00 = mem_wdata[0];
+   assign b25 = mem_rdata[25];
+   assign b24 = mem_rdata[24];
+   assign b17 = mem_rdata[17];
+   assign b16 = mem_rdata[16];
+   assign b09 = mem_rdata[9];
+   assign b08 = mem_rdata[8];
+   assign b01 = mem_rdata[1];
+   assign b00 = mem_rdata[0];
 
-   // Establish memory map for all slaves
-   assign sram_sel = mem_valid && (mem_addr < 32'h00002000);  // sram from 0 - 0x1fff
+   // Establish memory map for all slaves:
+   //   SRAM 00000000 - 0001ffff
+   //   LED  80000000
+   //   UART 80000008 - 8000000f
+   //   CDT  80000010 - 80000014
+   assign sram_sel = mem_valid && (mem_addr < 32'h00002000);
    assign leds_sel = mem_valid && (mem_addr == 32'h80000000);
-   assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008); // 0x80000008 - 0x8000000f
+   assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008);
    assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
 
    // Core can proceed regardless of *which* slave was targetted and is now ready.
@@ -106,8 +110,6 @@ module top (
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
 
-   // clk_osc is 27 MHz from can oscillator on Tang Nano 9K
-   // clk is from PLL.  It's the system clock.  4.493 MHz.
    reset_control reset_controller
      (
       .clk(clk),
@@ -115,28 +117,30 @@ module top (
       .reset_n(reset_n)
       );
 
-    uart_wrap uart (
-                  .clk(clk),
-                  .reset_n(reset_n),
-                  .uart_tx(uart_tx),
-                  .uart_rx(uart_rx),
-                  .uart_sel(uart_sel),
-                  .addr(mem_addr[3:0]),
-                  .uart_wstrb(mem_wstrb),
-                  .uart_di(mem_wdata),
-                  .uart_do(uart_data_o),
-                  .uart_ready(uart_ready)
-    );
+   uart_wrap uart
+     (
+      .clk(clk),
+      .reset_n(reset_n),
+      .uart_tx(uart_tx),
+      .uart_rx(uart_rx),
+      .uart_sel(uart_sel),
+      .addr(mem_addr[3:0]),
+      .uart_wstrb(mem_wstrb),
+      .uart_di(mem_wdata),
+      .uart_do(uart_data_o),
+      .uart_ready(uart_ready)
+      );
 
-    countdown_timer cdt (
-                        .clk(clk),
-                        .reset_n(reset_n),
-                        .cdt_sel(cdt_sel),
-                        .cdt_data_i(mem_wdata),
-                        .we(mem_wstrb),
-                        .cdt_ready(cdt_ready),
-                        .cdt_data_o(cdt_data_o)
-                  );
+   countdown_timer cdt
+     (
+      .clk(clk),
+      .reset_n(reset_n),
+      .cdt_sel(cdt_sel),
+      .cdt_data_i(mem_wdata),
+      .we(mem_wstrb),
+      .cdt_ready(cdt_ready),
+      .cdt_data_o(cdt_data_o)
+      );
 
    sram #(.ADDRWIDTH(13)) memory
      (
@@ -149,14 +153,14 @@ module top (
       .sram_ready(sram_ready),
       .sram_data_o(sram_data_o)
       );
-
+   
    tang_leds soc_leds
      (
       .clk(clk),
       .reset_n(reset_n),
       .leds_sel(leds_sel),
-      .leds_data_i(mem_wdata[29:24]),
-       .we(mem_wstrb[0]),
+      .leds_data_i(mem_wdata[5:0]),
+      .we(mem_wstrb[0]),
       .leds_ready(leds_ready),
       .leds_data_o(leds_data_o)
       );
@@ -188,6 +192,3 @@ module top (
         );
 
 endmodule // top
-
-
-

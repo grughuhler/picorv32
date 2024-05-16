@@ -6,10 +6,13 @@
  * License: SPDX BSD-2-Clause.
  */
 
-extern void cdt_write0(const unsigned char value);
-extern void cdt_write1(const unsigned char value);
-extern void cdt_write2(const unsigned char value);
-extern void cdt_write3(const unsigned char value);
+extern void cdt_wbyte0(const unsigned char value);
+extern void cdt_wbyte1(const unsigned char value);
+extern void cdt_wbyte2(const unsigned char value);
+extern void cdt_wbyte3(const unsigned char value);
+
+extern void cdt_whalf0(const unsigned short value);
+extern void cdt_whalf2(const unsigned short value);
 
 extern void cdt_write(const unsigned int value);
 extern unsigned int cdt_read(void);

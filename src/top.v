@@ -27,13 +27,16 @@ In this SoC, slave (target) device has signals:
      correct SLAVE_data_o based on SLAVE_sel.
 */
 
+// Define this for logic analyer connections and enable picorv32_la.cst.
+//`define USE_LA
+
 module top (
             input wire        clk,
             input wire        reset_button_n,
             input wire        uart_rx,
             output wire       uart_tx,
-            output wire [5:0] leds,
-            output wire       clk_out, // This and below are for debug.
+`ifdef USE_LA
+            output wire       clk_out,
             output wire       mem_instr, 
             output wire       mem_valid,
             output wire       mem_ready,
@@ -45,7 +48,9 @@ module top (
             output wire       b08,
             output wire       b01,
             output wire       b00,
-            output wire [3:0] mem_wstrb
+            output wire [3:0] mem_wstrb,
+`endif
+            output wire [5:0] leds
             );
 
    parameter [0:0] BARREL_SHIFTER = 0;
@@ -64,6 +69,9 @@ module top (
    wire [31:0]                mem_addr;
    wire [31:0]                mem_wdata;
    wire [31:0]                mem_rdata;
+   wire [3:0]                 mem_wstrb;
+   wire                       mem_ready;
+   wire                       mem_inst;
    wire                       leds_sel;
    wire                       leds_ready;
    wire [31:0]                leds_data_o;

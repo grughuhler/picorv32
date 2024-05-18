@@ -85,6 +85,7 @@ module top (
    wire [31:0]                uart_data_o;
    wire                       uart_ready;
 
+`ifdef USE_LA
    // Assigns for external logic analyzer connction
    assign clk_out = clk;
    assign b25 = mem_rdata[25];
@@ -95,6 +96,7 @@ module top (
    assign b08 = mem_rdata[8];
    assign b01 = mem_rdata[1];
    assign b00 = mem_rdata[0];
+`endif
 
    // Establish memory map for all slaves:
    //   SRAM 00000000 - 0001ffff

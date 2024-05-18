@@ -6,11 +6,12 @@
     <Device name="GW1NR-9C" pn="GW1NR-LV9QN88PC6/I5">gw1nr9c-004</Device>
     <FileList>
         <File path="src/countdown_timer.v" type="file.verilog" enable="1"/>
-        <File path="src/gowin_sp/gowin_sp.v" type="file.verilog" enable="1"/>
+        <File path="src/force_rebuild.v" type="file.verilog" enable="1"/>
         <File path="src/picorv32.v" type="file.verilog" enable="1"/>
         <File path="src/reset.v" type="file.verilog" enable="1"/>
         <File path="src/simpleuart.v" type="file.verilog" enable="1"/>
         <File path="src/sram.v" type="file.verilog" enable="1"/>
+        <File path="src/sram8bit.v" type="file.verilog" enable="1"/>
         <File path="src/tang_nano_9k_leds.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
         <File path="src/uart_wrap.v" type="file.verilog" enable="1"/>

@@ -1,20 +1,39 @@
 # Just run "make" to create ../src/mem_init.v
 
-CFLAGS = -mno-save-restore -march=rv32i2p0 -mabi=ilp32 -nostartfiles -nostdlib -static -O1
+
+# SRAM_ADDR_WIDTH sets the width of the SRAM's address in the Verilog.
+# This implicitly sets the total bytes of SRAM to 4*(1 << SRAM_ADDR_WIDTH)
+# which, in turn, sets the starting address of the stack pointer in
+# startup.s
+#
+# The practical values are
+#   11 - giving 8192 bytes of SRAM (using 4 block SRAMS).
+#   12 - giving 16384 bytes of SRAM (using 8 block SRAMS).
+#   13 - giving 32768 bytes of SRAM  (using 16 block SRAMS).
+#
+# The Gowin GW1NR-LV9 has only 26 block SRAMS so value 14 will fail.
+# Values less than 11 will work but are pointless on this FPGA since
+# 4 block SRAMs will still be used.
+#
+# Note that file force_rebuild.v is empty and exists only to cause
+# the Gowan IDE to rebuild when this makefile has executed.
+
+SRAM_ADDR_WIDTH = 11
+
+COMMONFLAGS = -march=rv32i2p0 -mabi=ilp32
+CFLAGS = -mno-save-restore $(COMMONFLAGS) -nostartfiles -nostdlib -static -O1
+ASFLAGS = --defsym SRAM_ADDR_WIDTH=$(SRAM_ADDR_WIDTH) $(COMMONFLAGS)
 LIBS = /usr/lib/gcc/riscv64-unknown-elf/10.2.0/rv32i/ilp32/libgcc.a
 
 CC = riscv64-unknown-elf-gcc
 OBJCOPY = riscv64-unknown-elf-objcopy
 OBJDUMP = riscv64-unknown-elf-objdump
+AS = riscv64-unknown-elf-as
 
-all: mem_init.v prog.hex conv_to_init
+all: prog.hex conv_to_init
 
 conv_to_init: conv_to_init.c
 	gcc -o conv_to_init conv_to_init.c
-
-mem_init.v: prog.bin conv_to_init
-	rm -f ../src/mem_init.v
-	./conv_to_init prog.bin > ../src/mem_init.v
 
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
@@ -28,17 +47,23 @@ uart.o: uart.c
 leds.o: leds.c
 	$(CC) $(CFLAGS) -c leds.c
 
-prog.elf: startup.s main.o countdown_timer.o uart.o leds.o
-	$(CC) $(CFLAGS) -Tlink_cmd.ld -o prog.elf startup.s main.o countdown_timer.o \
+startup.o: startup.s Makefile
+	$(AS) $(ASFLAGS) -o startup.o startup.s
+
+prog.elf: startup.o main.o countdown_timer.o uart.o leds.o
+	$(CC) $(CFLAGS) -Tlink_cmd.ld -o prog.elf startup.o main.o countdown_timer.o \
           uart.o leds.o $(LIBS)
 
-prog.bin: prog.elf
+prog.bin: prog.elf conv_to_init Makefile
 	$(OBJCOPY) prog.elf -O binary prog.bin
-#	$(OBJCOPY) -j .text prog -O binary prog.bin
+	rm -f ../src/mem_init[0-3].ini ../src/sram_addr_width
+	./conv_to_init $(SRAM_ADDR_WIDTH) prog.bin
+	touch ../src/force_rebuild.v
 
 prog.hex: prog.bin
 	od -v -Ax -t x4 prog.bin > prog.hex
 
 clean:
-	rm -f prog.elf prog.hex prog.bin main.o conv_to_init countdown_timer.o uart.o leds.o
+	rm -f prog.elf prog.hex prog.bin main.o conv_to_init countdown_timer.o uart.o \
+            startup.o leds.o
 

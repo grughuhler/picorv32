@@ -53,19 +53,24 @@ module top (
             output wire [5:0] leds
             );
 
-   parameter [0:0] BARREL_SHIFTER = 0;
-   parameter [0:0] ENABLE_MUL = 0;
-   parameter [0:0] ENABLE_DIV = 0;
-   parameter [0:0] ENABLE_FAST_MUL = 0;
-   parameter [0:0] ENABLE_COMPRESSED = 0;
-   parameter [0:0] ENABLE_IRQ_QREGS = 0;
+   // This include gets SRAM_ADDR_WIDTH from software build process
+   `include "sram_addr_width.v"
 
-   parameter integer          MEMBYTES = 8192;      // This is not easy to change
+   parameter BARREL_SHIFTER = 0;
+   parameter ENABLE_MUL = 0;
+   parameter ENABLE_DIV = 0;
+   parameter ENABLE_FAST_MUL = 0;
+   parameter ENABLE_COMPRESSED = 0;
+   parameter ENABLE_IRQ_QREGS = 0;
+
+   parameter          MEMBYTES = 4*(1 << SRAM_ADDR_WIDTH); 
    parameter [31:0] STACKADDR = (MEMBYTES);         // Grows down.  Software should set it.
    parameter [31:0] PROGADDR_RESET = 32'h0000_0000;
    parameter [31:0] PROGADDR_IRQ = 32'h0000_0000;
 
    wire                       reset_n; 
+   wire                       mem_valid;
+   wire                       mem_instr;
    wire [31:0]                mem_addr;
    wire [31:0]                mem_wdata;
    wire [31:0]                mem_rdata;
@@ -103,7 +108,7 @@ module top (
    //   LED  80000000
    //   UART 80000008 - 8000000f
    //   CDT  80000010 - 80000014
-   assign sram_sel = mem_valid && (mem_addr < 32'h00002000);
+   assign sram_sel = mem_valid && (mem_addr < MEMBYTES);
    assign leds_sel = mem_valid && (mem_addr == 32'h80000000);
    assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008);
    assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
@@ -152,13 +157,13 @@ module top (
       .cdt_data_o(cdt_data_o)
       );
 
-   sram #(.ADDRWIDTH(13)) memory
+   sram #(.SRAM_ADDR_WIDTH(SRAM_ADDR_WIDTH)) memory
      (
       .clk(clk),
-      .resetn(reset_n),
+      .reset_n(reset_n),
       .sram_sel(sram_sel),
       .wstrb(mem_wstrb),
-      .addr(mem_addr[12:0]),
+      .addr(mem_addr[SRAM_ADDR_WIDTH + 1:0]),
       .sram_data_i(mem_wdata),
       .sram_ready(sram_ready),
       .sram_data_o(sram_data_o)

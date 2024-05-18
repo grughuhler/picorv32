@@ -1,10 +1,24 @@
 /* Copyright 2024 Grug Huhler.  License SPDX BSD-2-Clause.
 
-   This program converts the .text section (ONLY!!!) of a
-   C program into a file that can be included when doing
-   the Verilog build of the simple picorv32 SoC.
+   This program converts a binary file into four text files
+   that are used to initialize four inferred  8-bit wide
+   SRAMs used in the picorv32 project.
 
-   This is a VERY limited scheme so use with care.
+   Usage: conv_to_init sram_addr_width input_file_name
+
+   The memory is then assumed to be 4*2**addr_with bytes
+   The output file names are fixed: 
+
+   1. ../src/sram_addr_width.v
+
+      This file contains the line
+
+         parameter SRAM_ADDR_WIDTH = sram_addr_width;
+
+      and is used to set this Verilog parameter.
+
+   2. ../src/mem_initX.ini, where X = 0, 1, 2, 3.
+       File mem_init0.ini contains the least significant byte.
 
    See the Makefile.
 */
@@ -13,74 +27,74 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ROWLEN 32
-
-unsigned char ram[4][ROWLEN];
-
-void print_init(int n)
-{
-  int i, j;
-
-  for (i = 0; i < 4; i++) {
-    printf("localparam RAM%d_%02X = 256'h",i, n);
-    for (j = 0; j < ROWLEN; j++) printf("%02X", ram[i][j]);
-    printf(";\n");
-  }
-}
 
 int main(int argc, char **argv)
 {
-  FILE *fp;
-  int i, v, count = 0, index = ROWLEN - 1, n = 0;
+  char fname[80];
+  FILE *fp_in, *fp_param, *fp_out[4];
+  int v, i, byte_count = 0;
+  int sram_addr_width, mem_bytes;
+
   
-  if (argc != 2) {
-    fprintf(stderr, "Usage: conv_to_init filename\n");
+  if (argc != 3) {
+    fprintf(stderr, "Usage: conv_to_init sram_addr_width filename\n");
     exit(EXIT_FAILURE);
   }
 
-  fp = fopen(argv[1], "rb");
-  if (fp == NULL) {
-    fprintf(stderr, "Could not open %s\n", argv[1]);
+  sram_addr_width = atoi(argv[1]);
+  if (sram_addr_width <= 0) {
+    fprintf(stderr, "sram_addr_width must be posiive\n");
     exit(EXIT_FAILURE);
   }
 
-  printf("// This is a generated file\n");
-  memset(ram, 0, sizeof(ram));
+  mem_bytes = 4*(1 << sram_addr_width);
+  
+  fp_in = fopen(argv[2], "rb");
+  if (fp_in == NULL) {
+    fprintf(stderr, "Could not open %s\n", argv[2]);
+    exit(EXIT_FAILURE);
+  }
 
-  while ((v = fgetc(fp)) != EOF) {
-    ram[count%4][index] = v;
-    if (count%4 == 3) index -= 1;
-    count += 1;
-    if (index == -1) {
-      print_init(n);
-      n += 1;
-      index = ROWLEN - 1;
-      memset(ram, 0, sizeof(ram));
+  for (i = 0; i < 4; i++) {
+
+    sprintf(fname, "../src/mem_init%d.ini", i);
+    
+    fp_out[i] = fopen(fname, "wb");
+    if (fp_out[i] == NULL) {
+      fprintf(stderr, "could not open file %s\n", fname);
+      exit(EXIT_FAILURE);
     }
   }
 
-  fclose(fp);
+  fp_param = fopen("../src/sram_addr_width.v", "w");
+  if (fp_param == NULL) {
+    fprintf(stderr, "could not open file %s\n", "../src/sram_addr_width.v");
+    exit(EXIT_FAILURE);
+  }
+  fprintf(fp_param, "parameter SRAM_ADDR_WIDTH = %d;\n", sram_addr_width);
+  fclose(fp_param);
 
-  // complete one if in progress
-  if (index != ROWLEN -1) {
-    print_init(n);
-    n += 1;
+  while ((v = fgetc(fp_in)) != EOF) {
+    fprintf(fp_out[byte_count % 4], "%02X\n", v);
+    byte_count += 1;
   }
 
-  if (n >= 0x40) {
-    fprintf(stderr, "ERROR: PROGRAM IS TOO LARGE, greater than 8192 bytes\n");
-    fprintf(stderr, "It must be LESS THAN 8192 to leave room for the stack\n");
+  /* Initialize to 16 byte boundary just in case */
+  while ((byte_count % 16) != 0) {
+    fprintf(fp_out[byte_count % 4], "%02X\n", 0);
+    byte_count += 1;
+  }
+
+  fclose(fp_in);
+  for (i = 0; i < 4; i++) fclose(fp_out[i]);
+
+  if (byte_count > mem_bytes) {
+      fprintf(stderr, "ERROR: PROGRAM IS TOO LARGE, greater than %d bytes\n", mem_bytes);
+    fprintf(stderr, "And don't forget to leave room for the stack\n");
     return(EXIT_FAILURE);
   }
 
-  for (i = n; i < 0x40; i++) {
-      memset(ram, 0, sizeof(ram));
-      print_init(i);
-  }
-
-  printf("// count = %d, index = %d\n", count, index);
-
-
+  printf("NOTE: program occupies %d bytes\n", byte_count);
 
   return EXIT_SUCCESS;
 }

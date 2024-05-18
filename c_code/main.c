@@ -203,6 +203,10 @@ int main()
   uart_set_div(234); /* 27000000/115200 */
   endian_test((volatile unsigned int *)&i);
 
+  uart_puts("Addr of i = ");
+  uart_print_hex((unsigned int) &i);
+  uart_puts("\r\n");
+
   /* Run the mem_test */
   if (mem_test())
     uart_puts("memory test FAILED.\r\n");

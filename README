@@ -33,7 +33,18 @@ the c_code directory.
 See https://www.youtube.com/@electronics.tinker/videos for a video
 about this-- and more videos about the Tang Nano 9K.
 
-Video about this project: https://youtu.be/cq7ETOCPIBM
+First video about this project: https://youtu.be/cq7ETOCPIBM.
 
+See the channel for a later video.
 
+Git Branches
 
+The main branch contains the original design as described in the first
+video.  There is a new branch for the version that uses the (much
+better) method of creating the SRAM via Verilog Inference.  To get
+this version:
+
+git clone https://github.com/grughuhler/picorv32.git
+cd picorv32/
+git branch -a
+git checkout -b infer_sram remotes/origin/infer_sram

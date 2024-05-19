@@ -89,8 +89,9 @@ int main(int argc, char **argv)
   for (i = 0; i < 4; i++) fclose(fp_out[i]);
 
   if (byte_count > mem_bytes) {
-      fprintf(stderr, "ERROR: PROGRAM IS TOO LARGE, greater than %d bytes\n", mem_bytes);
-    fprintf(stderr, "And don't forget to leave room for the stack\n");
+      fprintf(stderr, "ERROR: PROGRAM IS TOO LARGE: %d bytes is\n", byte_count);
+      fprintf(stderr, "       greater than %d bytes\n", mem_bytes);
+      fprintf(stderr, "And don't forget to leave room for the stack\n");
     return(EXIT_FAILURE);
   }
 
@@ -98,6 +99,3 @@ int main(int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
-
-
-  

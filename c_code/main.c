@@ -200,7 +200,7 @@ int main()
   la_wtest();
   la_rtest();
 
-  uart_set_div(234); /* 27000000/115200 */
+  uart_set_div(47); /* 5400000/115200 */
   endian_test((volatile unsigned int *)&i);
 
   uart_puts("Addr of i = ");
@@ -247,7 +247,7 @@ int main()
     uart_print_hex(readtime());
     uart_puts("\r\n");
 
-    cdt_delay(27000000);
+    cdt_delay(5400000);
     i += 1;
   }
   

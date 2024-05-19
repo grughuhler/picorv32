@@ -31,7 +31,7 @@ In this SoC, slave (target) device has signals:
 //`define USE_LA
 
 module top (
-            input wire        clk,
+            input wire        clk_in,
             input wire        reset_button_n,
             input wire        uart_rx,
             output wire       uart_tx,
@@ -102,6 +102,12 @@ module top (
    assign b01 = mem_rdata[1];
    assign b00 = mem_rdata[0];
 `endif
+
+   // Reduce clock from 27 to 5 MHz to help Gowin Analysis Oscilloscope
+   Gowin_rPLL pll (
+      .clkout(clk), //output clkout
+      .clkin(clk_in) //input clkin
+   );
 
    // Establish memory map for all slaves:
    //   SRAM 00000000 - 0001ffff

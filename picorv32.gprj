@@ -7,6 +7,7 @@
     <FileList>
         <File path="src/countdown_timer.v" type="file.verilog" enable="1"/>
         <File path="src/force_rebuild.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
         <File path="src/picorv32.v" type="file.verilog" enable="1"/>
         <File path="src/reset.v" type="file.verilog" enable="1"/>
         <File path="src/simpleuart.v" type="file.verilog" enable="1"/>
@@ -18,5 +19,6 @@
         <File path="src/picorv32.cst" type="file.cst" enable="1"/>
         <File path="src/picorv32_la.cst" type="file.cst" enable="0"/>
         <File path="src/picorv32.sdc" type="file.sdc" enable="1"/>
+        <File path="src/picorv32.rao" type="file.gao" enable="0"/>
     </FileList>
 </Project>

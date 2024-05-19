@@ -1,6 +1,7 @@
 /* Copyright 2024 Grug Huhler.  License SPDX BSD-2-Clause. */
 
-// 8192 bytes of sram formed from 4 Gowin single-port BSRAMs.
+// Create sram using Verilog inference with each 8-bit RAM initialized
+// with its own init file.
 
 module sram
   #(parameter SRAM_ADDR_WIDTH=11)

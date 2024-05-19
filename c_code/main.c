@@ -11,9 +11,9 @@
 #include "uart.h"
 #include "countdown_timer.h"
 
-#define MEMSIZE 1000
-unsigned long mem[MEMSIZE];
-unsigned long test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
+#define MEMSIZE 512
+unsigned int mem[MEMSIZE];
+unsigned int test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
 
 
 /* A simple memory test.  Delete this and also array mem
@@ -23,7 +23,7 @@ unsigned long test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
 int mem_test (void)
 {
   int i, test, errors;
-  unsigned long val, val_read;
+  unsigned int val, val_read;
 
   errors = 0;
   for (test = 0; test < sizeof(test_vals)/sizeof(test_vals[0]); test++) {

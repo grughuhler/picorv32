@@ -7,17 +7,17 @@ The build environment is limited. Some things to know:
 * No standard library functions are available.
 * It's possible I missed some section type in the linker
   command file.
-* The SoC has only 8192 bytes of SRAM so program cannot be
-  large.
+* The SoC has at most 32768 bytes of SRAM so program cannot be
+  large.  See Makefile for setting the memory size.
 * There is no provision for interrupt handlers.
 
 You will need the gcc cross compiler for riscv.  On Ubuntu 22.04,
 
   sudo apt install gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf
 
-Basically, edit main.c and "make".  This will create mem_init.v in the
-Verilog source directory-- so you need to rebuild and reload the FPGA
-bitfile.
+Basically, edit main.c and "make".  This will create files in the
+Verilog source directory (see conv_init.c)-- so you need to rebuild
+and reload the FPGA bitfile.
 
 Program conv_to_init inputs a binary version of the image and creates
 mem_init.v.

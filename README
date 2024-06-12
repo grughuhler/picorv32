@@ -2,6 +2,19 @@ This directory contains a simple SoC that uses the risc-v (32-bit)
 core from https://github.com/YosysHQ/picorv32.  File picorv32.v is
 from there.  It is the core.
 
+Git branches contain later versions of this project.  The first after
+the main branch is "infer_sram" which instantiates block SRAMs a
+better way.
+
+Then, "gowin_user_flash" adds a controller for internal flash on the
+FPGA of the Tang Nano 9K.  You may want to use the latest branch rather
+than the main branch.  You can do this by:
+
+  git clone https://github.com/grughuhler/picorv32.git
+  cd picorv32
+  git branch -a  (to see all available branches)
+  git checkout -b gowin_user_flash remotes/origin/gowin_user_flash
+
 File top.v is the top level module and integrates the SoC's
 components which are:
 
@@ -34,6 +47,3 @@ See https://www.youtube.com/@electronics.tinker/videos for a video
 about this-- and more videos about the Tang Nano 9K.
 
 Video about this project: https://youtu.be/cq7ETOCPIBM
-
-
-

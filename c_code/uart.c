@@ -47,3 +47,53 @@ void uart_puts(char *s)
 {
   while (*s != 0) *UART_DATA = *s++;
 }
+
+unsigned int uart_gets(char *buf, unsigned int buf_len)
+{
+  unsigned int i = 0;
+  char ch;
+
+  while ((i < buf_len - 1) && ((ch = uart_getchar()) != '\r')) {
+    if ((ch == 3) || (ch == 0x7f) || (ch == 8)) {
+      uart_puts("\r\ncancelled\r\n");
+      return 0;
+    }
+    uart_putchar(ch);
+    *buf++ = ch;
+    i += 1;
+  }
+  uart_puts("\r\n");
+
+  return i;
+}
+
+unsigned int uart_get_hex(void)
+{
+  unsigned int v;
+  int keep_going;
+  char ch;
+
+  keep_going = 1;
+
+  v = 0;
+  while (keep_going) {
+
+    ch = uart_getchar();
+
+    if ((ch >= '0') && (ch <= '9')) {
+      v = 16*v + (ch - '0');
+      uart_putchar(ch);
+    } else if ((ch >= 'a') && (ch <= 'f')) {
+      v = 16*v + (ch - 'a' + 10);
+      uart_putchar(ch);
+    } else if ((ch >= 'A') && (ch <= 'F')) {
+      v = 16*v + (ch - 'A' + 10);
+      uart_putchar(ch);
+    } else if (ch == '\r') {
+      uart_putchar('\n');
+      keep_going = 0;
+    }
+  }
+
+  return v;
+}

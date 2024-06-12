@@ -9,11 +9,12 @@
    The memory is then assumed to be 4*2**addr_with bytes
    The output file names are fixed: 
 
-   1. ../src/sram_addr_width.v
+   1. ../src/sys_parameters.v
 
-      This file contains the line
+      This file contains the lines
 
-         parameter SRAM_ADDR_WIDTH = sram_addr_width;
+         localparam SRAM_ADDR_WIDTH = sram_addr_width;
+         localparam CLK_FREQ = clk_freq;
 
       and is used to set this Verilog parameter.
 
@@ -27,21 +28,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 int main(int argc, char **argv)
 {
   char fname[80];
   FILE *fp_in, *fp_param, *fp_out[4];
   int v, i, byte_count = 0;
-  int sram_addr_width, mem_bytes;
-
+  int sram_addr_width, mem_bytes, clk_freq;
   
-  if (argc != 3) {
-    fprintf(stderr, "Usage: conv_to_init sram_addr_width filename\n");
+  if (argc != 4) {
+    fprintf(stderr, "Usage: conv_to_init clk_freq sram_addr_width filename\n");
     exit(EXIT_FAILURE);
   }
 
-  sram_addr_width = atoi(argv[1]);
+  clk_freq = atoi(argv[1]);
+  if (clk_freq <= 0) {
+    fprintf(stderr, "clk_freq must be posiive\n");
+    exit(EXIT_FAILURE);
+  }
+
+  sram_addr_width = atoi(argv[2]);
   if (sram_addr_width <= 0) {
     fprintf(stderr, "sram_addr_width must be posiive\n");
     exit(EXIT_FAILURE);
@@ -49,9 +54,9 @@ int main(int argc, char **argv)
 
   mem_bytes = 4*(1 << sram_addr_width);
   
-  fp_in = fopen(argv[2], "rb");
+  fp_in = fopen(argv[3], "rb");
   if (fp_in == NULL) {
-    fprintf(stderr, "Could not open %s\n", argv[2]);
+    fprintf(stderr, "Could not open %s\n", argv[3]);
     exit(EXIT_FAILURE);
   }
 
@@ -66,12 +71,13 @@ int main(int argc, char **argv)
     }
   }
 
-  fp_param = fopen("../src/sram_addr_width.v", "w");
+  fp_param = fopen("../src/sys_parameters.v", "w");
   if (fp_param == NULL) {
-    fprintf(stderr, "could not open file %s\n", "../src/sram_addr_width.v");
+    fprintf(stderr, "could not open file %s\n", "../src/sys_parameters.v");
     exit(EXIT_FAILURE);
   }
-  fprintf(fp_param, "parameter SRAM_ADDR_WIDTH = %d;\n", sram_addr_width);
+  fprintf(fp_param, "localparam SRAM_ADDR_WIDTH = %d;\n", sram_addr_width);
+  fprintf(fp_param, "localparam CLK_FREQ = %d;\n", clk_freq);
   fclose(fp_param);
 
   while ((v = fgetc(fp_in)) != EOF) {

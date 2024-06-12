@@ -7,9 +7,11 @@ The build environment is limited. Some things to know:
 * No standard library functions are available.
 * It's possible I missed some section type in the linker
   command file.
-* The SoC has at most 32768 bytes of SRAM so program cannot be
-  large.  See Makefile for setting the memory size.
+* The SoC has limitted SRAM so program cannot be large.  See Makefile
+  for setting the memory size.  The Tang Nano 20K supports 65536 bytes.
+  The Tang Nano 9K supports only 32768.
 * There is no provision for interrupt handlers.
+* Only the Tang Nano 9K has user flash (both have external SPI flash).
 
 You will need the gcc cross compiler for riscv.  On Ubuntu 22.04,
 
@@ -20,7 +22,9 @@ Verilog source directory (see conv_init.c)-- so you need to rebuild
 and reload the FPGA bitfile.
 
 Program conv_to_init inputs a binary version of the image and creates
-mem_init.v.
+memory initialization files (and some other files).
+
+The system clock speed and SRAM memory size are set in the Makefile.
 
 Hints:
 

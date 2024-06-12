@@ -1,20 +1,18 @@
 /* Copyright 2024 Grug Huhler.  License SPDX BSD-2-Clause.
 
-   This program shows counting on the LEDs of the Tang Nano
-   9K FPGA development board.
-
-   Function foo lets one see stores of different size and alignment by
-   looking at the wstrb signals from the pico32rv.
+   This is a test program for the simple SoC based on the PicoRV32 core.
+   It can be used on either the Tang Nano 9K or the Tang Nano 20K, but
+   only the former contains user flash.
 */
 
 #include "leds.h"
 #include "uart.h"
 #include "countdown_timer.h"
+#include "uflash.h"
 
 #define MEMSIZE 512
 unsigned int mem[MEMSIZE];
 unsigned int test_vals[] = {0, 0xffffffff, 0xaaaaaaaa, 0x55555555, 0xdeadbeef};
-
 
 /* A simple memory test.  Delete this and also array mem
    above to free much of the SRAM for other things
@@ -61,8 +59,10 @@ static inline unsigned int readtime(void)
 
 }
 
-void endian_test(volatile unsigned int *addr)
+void endian_test(void)
 {
+  volatile unsigned int test_loc = 0;
+  volatile unsigned int *addr = &test_loc;
   volatile unsigned char *cp0, *cp3;
   char byte0, byte3;
   unsigned int i, ok;
@@ -150,7 +150,7 @@ void la_rtest(void)
 }
 
 
-void cdt_test(void)
+void countdown_timer_test(void)
 {
   unsigned int val;
   unsigned int test_errors = 0;
@@ -175,81 +175,258 @@ void cdt_test(void)
   } else {
     uart_puts("PASSED\r\n");
   }
-  
-#if 0
-  /* These are interesting to see on the logic analyzer */
-  cdt_wbyte3(0x3);       // addr 0x80000013
-  cdt_wbyte2(0x2);       // addr 0x80000012
-  cdt_wbyte1(0x1);       // addr 0x80000011
-  cdt_wbyte0(0x0);       // addr 0x80000010
-  cdt_whalf2(0x0302);    // addr 0x80000012
-  cdt_whalf0(0x0100);    // addr 0x80000010
-  cdt_write(0x00010203); // addr 0x80000010
-  cdt_write(0x01020300); // addr 0x80000010
-  cdt_write(0x02030001); // addr 0x80000010
-  cdt_write(0x03000102); // addr 0x80000010
-#endif
 }
 
-int main()
+void cycle_delay(unsigned int cycles)
 {
-  int i;
-  unsigned char v, ch;
+  uart_puts("delay ");
+  uart_print_hex(cycles);
+  uart_puts(" cycles\r\n");
+  cdt_delay(cycles);
+  uart_puts("done\r\n");
+}
 
-  set_leds(6);
-  la_wtest();
-  la_rtest();
-
-  uart_set_div(47); /* 5400000/115200 */
-  endian_test((volatile unsigned int *)&i);
-
-  uart_puts("Addr of i = ");
-  uart_print_hex((unsigned int) &i);
+void read_led(void)
+{
+  unsigned char v;
+  
+  v = get_leds();
+  uart_puts("LED = ");
+  uart_print_hex(v);
   uart_puts("\r\n");
+}
 
-  /* Run the mem_test */
+void incr_led(void)
+{
+  unsigned char v;
+  
+  v = get_leds();
+  set_leds(v+1);
+}
+
+void set_led(unsigned int value)
+{
+  set_leds(value);
+}
+
+void memory_test(void)
+{
   if (mem_test())
     uart_puts("memory test FAILED.\r\n");
   else
     uart_puts("memory test PASSED.\r\n");
+}
 
-  cdt_test();
-  
-  /* Test UART input */
-  uart_rx_test();
-  
-  uart_puts("\r\nPress a key to start LED counting and lots of prints:\r\n");
-  (void) uart_getchar();
+void read_clock(void)
+{
+  uart_puts("time is ");
+  uart_print_hex(readtime());
+  uart_puts("\r\n");
+}
 
-  /* Print stuff over and over and have the LED count,
-     both writing and reading the LED.
-  */
+void help(void)
+{
+  uart_puts("ct            : test countdown timer\r\n");
+  uart_puts("dc cycles     : delay for cycles\r\n");
+  uart_puts("ef addr       : erase page of uflash\r\n");
+  uart_puts("et            : endian test\r\n");
+  uart_puts("rl            : read LEDs\r\n");
+  uart_puts("il            : increment LEDs\r\n");
+  uart_puts("sl value      : set LEDs to value\r\n");
+  uart_puts("mt            : memory test\r\n");
+  uart_puts("rc            : read clock\r\n");
+  uart_puts("he            : print help\r\n");
+  uart_puts("rb addr       : read byte\r\n");
+  uart_puts("rh addr       : read half word\r\n");
+  uart_puts("rw addr       : read word\r\n");
+  uart_puts("wb addr value : write byte\r\n");
+  uart_puts("wh addr value : write half word\r\n");
+  uart_puts("ww addr value : write word\r\n");
+}
 
-  i = 0;
-  while (1) {
-    uart_puts("\r\nLoop ");
-    uart_print_hex(i);
-    uart_puts("\r\n");
-    v = get_leds();
-    set_leds(v+1);
-    
-    uart_puts("Four score and seven years ago our fathers brought forth upon this\r\n"
-	      "continent, a new nation, conceived in Liberty, and dedicated to the\r\n"
-	      "proposition that all men are created equal.  Now we are engaged in a\r\n"
-	      "great civil war, testing whether that nation, or any nation so\r\n"
-	      "conceived and so dedicated, can long endure. We are met on a great\r\n"
-	      "battle-field of that war. We have come to dedicate a portion of that\r\n"
-	      "field, as a final resting place for those who here gave their lives that\r\n"
-	      "that nation might live. It is altogether fitting and proper that we\r\n"
-	      "should do this.\r\n");
-    
-    uart_puts("time is ");
-    uart_print_hex(readtime());
-    uart_puts("\r\n");
+void read_byte(unsigned int addr)
+{
+  volatile unsigned char *p = (volatile unsigned char *) addr;
 
-    cdt_delay(5400000);
-    i += 1;
+  uart_print_hex(*p);
+  uart_puts("\r\n");
+}
+
+void read_half(unsigned int addr)
+{
+  volatile unsigned short *p = (volatile unsigned short *) addr;
+
+  uart_print_hex(*p);
+  uart_puts("\r\n");
+}
+
+void read_word(unsigned int addr)
+{
+  volatile unsigned int *p = (volatile unsigned int *) addr;
+
+  uart_puts("read addr ");
+  uart_print_hex(addr);
+  uart_puts("\r\n");
+
+  uart_print_hex(*p);
+  uart_puts("\r\n");
+}
+
+void write_byte(unsigned int addr, unsigned int value)
+{
+  volatile unsigned char *p = (volatile unsigned char *) addr;
+
+  *p = value;
+}
+
+void write_half(unsigned int addr, unsigned int value)
+{
+  volatile unsigned short *p = (volatile unsigned short *) addr;
+
+  *p = value;
+}
+
+void write_word(unsigned int addr, unsigned int value)
+{
+  volatile unsigned int *p = (volatile unsigned int *) addr;
+
+  *p = value;
+}
+
+/* struct command lists available commands.  See function help.
+ * Each function takes one or two arguments.  The table below
+ * contains a pointer to the function to call for each command.
+ */
+
+struct command {
+  char *cmd_string;
+  int num_args;
+  union {
+    void (*func0)(void);
+    void (*func1)(unsigned int val);
+    void (*func2)(unsigned int val1, unsigned int val2);
+  } u;
+} commands[] = {
+  {"ct", 0, .u.func0=countdown_timer_test},
+  {"dc", 1, .u.func1=cycle_delay}, // cycles
+  {"ef", 1, .u.func1=erase_page_uflash}, // addr
+  {"et", 0, .u.func0=endian_test},
+  {"rl", 0, .u.func0=read_led},
+  {"il", 0, .u.func0=incr_led},
+  {"sl", 1, .u.func1=set_led},   // val
+  {"mt", 0, .u.func0=memory_test},
+  {"rc", 0, .u.func0=read_clock},
+  {"he", 0, .u.func0=help},
+  {"rb", 1, .u.func1=read_byte}, // addr
+  {"rh", 1, .u.func1=read_half}, // addr
+  {"rw", 1, .u.func1=read_word}, // addr
+  {"wb", 2, .u.func2=write_byte}, // addr, val
+  {"wh", 2, .u.func2=write_half}, // addr, val
+  {"ww", 2, .u.func2=write_word} // addr, val
+};
+
+
+void eat_spaces(char **buf, unsigned int *len)
+{
+  while (len > 0) {
+    if (**buf == ' ') {
+      *buf += 1;
+      *len -= 1;
+    } else
+      break;
   }
+}
+
+/* Returns 1 if a number found, else 0.  Number is in *v */
+
+unsigned int get_hex(char **buf, unsigned int *len, unsigned int *v)
+{
+  int valid = 0;
+  int keep_going;
+  char ch;
+
+  keep_going = 1;
+
+  *v = 0;
+  while (keep_going && (*len > 0)) {
+
+    ch = **buf;
+    *buf += 1;
+    *len -= 1;
+
+    if ((ch >= '0') && (ch <= '9')) {
+      *v = 16*(*v) + (ch - '0');
+      valid = 1;
+    } else if ((ch >= 'a') && (ch <= 'f')) {
+      *v = 16*(*v) + (ch - 'a' + 10);
+      valid = 1;
+    } else if ((ch >= 'A') && (ch <= 'F')) {
+      *v = 16*(*v) + (ch - 'A' + 10);
+      valid = 1;
+    } else {
+      keep_going = 0;
+    }
+  }
+
+  return valid;
+}
+
+
+void parse(char *buf, unsigned int len)
+{
+  int i;
+  unsigned int val1, val2;
+
+  eat_spaces(&buf, &len);
+  if (len < 2) return;
+
+  for (i = 0; i < sizeof(commands)/sizeof(commands[0]); i++)
+    if ((buf[0] == commands[i].cmd_string[0]) && (buf[1] == commands[i].cmd_string[1])) {
+      buf += 2;
+      len -= 2;
+      switch (commands[i].num_args) {
+      case 0:
+	commands[i].u.func0();
+	break;
+      case 1:
+	eat_spaces(&buf, &len);
+	if (get_hex(&buf, &len, &val1)) commands[i].u.func1(val1);
+	break;
+      case 2:
+	eat_spaces(&buf, &len);
+	if (get_hex(&buf, &len, &val1)) {
+	  eat_spaces(&buf, &len);
+	  if (get_hex(&buf, &len, &val2)) commands[i].u.func2(val1, val2);
+	}
+	break;
+      default:
+	break;
+      }
+      break;
+    }
+}
+
+#define BUFLEN 64
+
+int main()
+{
+  char buf[BUFLEN];
+  unsigned int len;
   
+  set_leds(6);
+  la_wtest(); /* Could delete these.  They produce transactions that are */
+  la_rtest(); /* nice to view on a logic analyzer. */
+
+  uart_set_div(CLK_FREQ/115200.0 + 0.5);
+  
+  uart_puts("\r\nStarting, CLK_FREQ: 0x");
+  uart_print_hex(CLK_FREQ);
+  uart_puts("\r\n\r\n");
+
+  while (1) {
+    len = uart_gets(buf, BUFLEN);
+    parse(buf, len);
+  }
+
   return 0;
 }

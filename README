@@ -6,25 +6,27 @@ File top.v is the top level module and integrates the SoC's
 components which are:
 
 * The risc-v core.
-* 8192 bytes of SRAM memory.
+* 8192 bytes of SRAM memory (adjustable see c_code/Makefile)
 * A small reset controller.
 * A UART (wrapper around the simpleuart from
   https://github.com/YosysHQ/picorv32).
 * An LED driver that supports read and write.
 * A 32-bit count-down timer that can be read and written.
   It counts down to zero and stops.
+* A Gowin user flash controller.
 
 The project targets the Tang Nano 9K FPGA development board that
 contains a Gowin GW1NR-9LV FPGA.  It is intended to be very
 simple and direct.  There are no integration abstractions.
 
 It was built using the educational version of the Gowin IDE and
-tool chain, 1.9.9 Beta-4 Education Build(68283).
+tool chain, Version 1.9.9.03 Education (64-bit) build (73833).
 
 The Gowin IDE should build it.  See the README in directory c_code for
 information on how to build the software.  The program already in
-mem_init.v prints stuff and causes the LEDs on the board to count.  S1
-is the reset button.  Serial port: 115200, no parity, no flow control.
+mem_init.v presents a menu of options.
+
+S1 is the reset button.  Serial port: 115200, no parity, no flow control.
 
 The SRAM is initialized by the C code and then the Verilog build
 process.  This is how the software is "loaded".  See README in
@@ -35,7 +37,7 @@ about this-- and more videos about the Tang Nano 9K.
 
 First video about this project: https://youtu.be/cq7ETOCPIBM.
 
-See the channel for a later video.
+See the channel for several later videos.
 
 Git Branches
 

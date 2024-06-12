@@ -10,8 +10,10 @@
 #   11 - giving 8192 bytes of SRAM (using 4 block SRAMS).
 #   12 - giving 16384 bytes of SRAM (using 8 block SRAMS).
 #   13 - giving 32768 bytes of SRAM  (using 16 block SRAMS).
+#   14 - giving 65536 bytes of SRAM  (using 32 block SRAMS, Nano 20K only).
 #
 # The Gowin GW1NR-LV9 has only 26 block SRAMS so value 14 will fail.
+# The GW2AR-LV18 has 46 blocks so 14 is OK for it.
 # Values less than 11 will work but are pointless on this FPGA since
 # 4 block SRAMs will still be used.
 #
@@ -19,6 +21,10 @@
 # the Gowan IDE to rebuild when this makefile has executed.
 
 SRAM_ADDR_WIDTH = 11
+
+# This tells both software and Verilog the clock speed.  Change it
+# here only.
+CLK_FREQ = 5400000
 
 COMMONFLAGS = -march=rv32i2p0 -mabi=ilp32
 CFLAGS = -mno-save-restore $(COMMONFLAGS) -nostartfiles -nostdlib -static -O1
@@ -35,8 +41,8 @@ all: prog.hex conv_to_init
 conv_to_init: conv_to_init.c
 	gcc -o conv_to_init conv_to_init.c
 
-main.o: main.c
-	$(CC) $(CFLAGS) -c main.c
+main.o: main.c Makefile
+	$(CC) $(CFLAGS) -DCLK_FREQ=$(CLK_FREQ) -c main.c
 
 countdown_timer.o: countdown_timer.c
 	$(CC) $(CFLAGS) -c countdown_timer.c
@@ -47,17 +53,20 @@ uart.o: uart.c
 leds.o: leds.c
 	$(CC) $(CFLAGS) -c leds.c
 
+uflash.o: uflash.c
+	$(CC) $(CFLAGS) -c uflash.c
+
 startup.o: startup.s Makefile
 	$(AS) $(ASFLAGS) -o startup.o startup.s
 
-prog.elf: startup.o main.o countdown_timer.o uart.o leds.o
+prog.elf: startup.o main.o countdown_timer.o uart.o leds.o uflash.o
 	$(CC) $(CFLAGS) -Tlink_cmd.ld -o prog.elf startup.o main.o countdown_timer.o \
-          uart.o leds.o $(LIBS)
+          uart.o leds.o uflash.o $(LIBS)
 
 prog.bin: prog.elf conv_to_init Makefile
 	$(OBJCOPY) prog.elf -O binary prog.bin
-	rm -f ../src/mem_init[0-3].ini ../src/sram_addr_width
-	./conv_to_init $(SRAM_ADDR_WIDTH) prog.bin
+	rm -f ../src/mem_init[0-3].ini ../src/sys_parameters.v
+	./conv_to_init $(CLK_FREQ) $(SRAM_ADDR_WIDTH) prog.bin
 	touch ../src/force_rebuild.v
 
 prog.hex: prog.bin

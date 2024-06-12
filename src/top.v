@@ -54,7 +54,7 @@ module top (
             );
 
    // This include gets SRAM_ADDR_WIDTH from software build process
-   `include "sram_addr_width.v"
+   `include "sys_parameters.v"
 
    parameter BARREL_SHIFTER = 0;
    parameter ENABLE_MUL = 0;
@@ -89,6 +89,10 @@ module top (
    wire                       uart_sel;
    wire [31:0]                uart_data_o;
    wire                       uart_ready;
+   wire                       uflash_sel;
+   wire [31:0]                uflash_data_o;
+   wire                       uflash_ready;
+   wire                       clk;
 
 `ifdef USE_LA
    // Assigns for external logic analyzer connction
@@ -110,24 +114,28 @@ module top (
    );
 
    // Establish memory map for all slaves:
-   //   SRAM 00000000 - 0001ffff
-   //   LED  80000000
-   //   UART 80000008 - 8000000f
-   //   CDT  80000010 - 80000014
+   //    SRAM 00000000 - 0001ffff
+   //  uflash 00020000 - 00032fff
+   //    LED  80000000
+   //    UART 80000008 - 8000000f
+   //    CDT  80000010 - 80000014
    assign sram_sel = mem_valid && (mem_addr < MEMBYTES);
+   assign uflash_sel = mem_valid && (mem_addr >= 32'h20000) && (mem_addr < 32'h33000);
    assign leds_sel = mem_valid && (mem_addr == 32'h80000000);
    assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008);
    assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
 
    // Core can proceed regardless of *which* slave was targetted and is now ready.
-   assign mem_ready = mem_valid & (sram_ready | leds_ready | uart_ready | cdt_ready);
+   assign mem_ready = mem_valid &
+      (sram_ready | leds_ready | uart_ready | cdt_ready | uflash_ready);
 
 
    // Select which slave's output data is to be fed to core.
-   assign mem_rdata = sram_sel ? sram_data_o :
-                      leds_sel ? leds_data_o :
-                      uart_sel ? uart_data_o :
-                      cdt_sel  ? cdt_data_o  : 32'h0;
+   assign mem_rdata = sram_sel   ? sram_data_o :
+                      leds_sel   ? leds_data_o :
+                      uart_sel   ? uart_data_o :
+                      uflash_sel ? uflash_data_o :
+                      cdt_sel    ? cdt_data_o  : 32'h0;
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
 
@@ -162,6 +170,17 @@ module top (
       .cdt_ready(cdt_ready),
       .cdt_data_o(cdt_data_o)
       );
+
+   uflash uflash0 (
+     .reset_n(reset_n),
+     .clk(clk),
+     .sel(uflash_sel),
+     .wstrb(mem_wstrb),
+     .addr(mem_addr[16:2]), // word address, 9-bits row, 6 bits col
+     .data_i(mem_wdata),
+     .ready(uflash_ready),
+     .data_o(uflash_data_o)
+   );
 
    sram #(.SRAM_ADDR_WIDTH(SRAM_ADDR_WIDTH)) memory
      (

@@ -2,56 +2,53 @@
 <GAO_CONFIG>
     <Version>3.0</Version>
     <Mode>Standard</Mode>
-    <AoCore index="0" sample_clock="clk" trig_type="0" storage_depth="4096" window_num="1" capture_amount="4096" implementation="0" trigger_pos="1" module_name="top" force_trigger_by_falling_edge="false">
+    <AoCore index="0" sample_clock="clk" trig_type="0" storage_depth="4096" window_num="1" capture_amount="4096" implementation="0" trigger_pos="3" module_name="top" force_trigger_by_falling_edge="false" capture_init_data_enabled="false">
         <SignalList>
-            <Signal>mem_valid</Signal>
-            <Signal>mem_instr</Signal>
-            <Signal>mem_ready</Signal>
-            <Bus name="mem_wstrb[3:0]">
-                <Signal>mem_wstrb[3]</Signal>
-                <Signal>mem_wstrb[2]</Signal>
-                <Signal>mem_wstrb[1]</Signal>
-                <Signal>mem_wstrb[0]</Signal>
+            <Signal capture_enable="true">mem_ready</Signal>
+            <Bus capture_enable="true" name="mem_addr[31:0]">
+                <Signal>mem_addr[31]</Signal>
+                <Signal>mem_addr[30]</Signal>
+                <Signal>mem_addr[29]</Signal>
+                <Signal>mem_addr[28]</Signal>
+                <Signal>mem_addr[27]</Signal>
+                <Signal>mem_addr[26]</Signal>
+                <Signal>mem_addr[25]</Signal>
+                <Signal>mem_addr[24]</Signal>
+                <Signal>mem_addr[23]</Signal>
+                <Signal>mem_addr[22]</Signal>
+                <Signal>mem_addr[21]</Signal>
+                <Signal>mem_addr[20]</Signal>
+                <Signal>mem_addr[19]</Signal>
+                <Signal>mem_addr[18]</Signal>
+                <Signal>mem_addr[17]</Signal>
+                <Signal>mem_addr[16]</Signal>
+                <Signal>mem_addr[15]</Signal>
+                <Signal>mem_addr[14]</Signal>
+                <Signal>mem_addr[13]</Signal>
+                <Signal>mem_addr[12]</Signal>
+                <Signal>mem_addr[11]</Signal>
+                <Signal>mem_addr[10]</Signal>
+                <Signal>mem_addr[9]</Signal>
+                <Signal>mem_addr[8]</Signal>
+                <Signal>mem_addr[7]</Signal>
+                <Signal>mem_addr[6]</Signal>
+                <Signal>mem_addr[5]</Signal>
+                <Signal>mem_addr[4]</Signal>
+                <Signal>mem_addr[3]</Signal>
+                <Signal>mem_addr[2]</Signal>
+                <Signal>mem_addr[1]</Signal>
+                <Signal>mem_addr[0]</Signal>
             </Bus>
-            <Bus name="mem_rdata[31:0]">
-                <Signal>mem_rdata[31]</Signal>
-                <Signal>mem_rdata[30]</Signal>
-                <Signal>mem_rdata[29]</Signal>
-                <Signal>mem_rdata[28]</Signal>
-                <Signal>mem_rdata[27]</Signal>
-                <Signal>mem_rdata[26]</Signal>
-                <Signal>mem_rdata[25]</Signal>
-                <Signal>mem_rdata[24]</Signal>
-                <Signal>mem_rdata[23]</Signal>
-                <Signal>mem_rdata[22]</Signal>
-                <Signal>mem_rdata[21]</Signal>
-                <Signal>mem_rdata[20]</Signal>
-                <Signal>mem_rdata[19]</Signal>
-                <Signal>mem_rdata[18]</Signal>
-                <Signal>mem_rdata[17]</Signal>
-                <Signal>mem_rdata[16]</Signal>
-                <Signal>mem_rdata[15]</Signal>
-                <Signal>mem_rdata[14]</Signal>
-                <Signal>mem_rdata[13]</Signal>
-                <Signal>mem_rdata[12]</Signal>
-                <Signal>mem_rdata[11]</Signal>
-                <Signal>mem_rdata[10]</Signal>
-                <Signal>mem_rdata[9]</Signal>
-                <Signal>mem_rdata[8]</Signal>
-                <Signal>mem_rdata[7]</Signal>
-                <Signal>mem_rdata[6]</Signal>
-                <Signal>mem_rdata[5]</Signal>
-                <Signal>mem_rdata[4]</Signal>
-                <Signal>mem_rdata[3]</Signal>
-                <Signal>mem_rdata[2]</Signal>
-                <Signal>mem_rdata[1]</Signal>
-                <Signal>mem_rdata[0]</Signal>
-            </Bus>
+            <Signal capture_enable="true">mem_valid</Signal>
+            <Signal capture_enable="true">uflash0/done_flag</Signal>
+            <Signal capture_enable="true">uflash0/ready</Signal>
+            <Signal capture_enable="true">uflash0/sel</Signal>
+            <Signal capture_enable="true">uflash0/start_flag</Signal>
         </SignalList>
         <Triggers>
             <Trigger index="0">
                 <SignalList>
-                    <Signal>mem_valid</Signal>
+                    <Signal>uflash0/sel</Signal>
                 </SignalList>
             </Trigger>
             <Trigger index="1"/>
@@ -92,5 +89,5 @@
             <Expression>M0</Expression>
         </Expressions>
     </AoCore>
-    <GAO_ID>1111011100011111</GAO_ID>
+    <GAO_ID>1010000010101100</GAO_ID>
 </GAO_CONFIG>

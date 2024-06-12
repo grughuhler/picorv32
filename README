@@ -49,4 +49,5 @@ this version:
 git clone https://github.com/grughuhler/picorv32.git
 cd picorv32/
 git branch -a
-git checkout -b infer_sram remotes/origin/infer_sram
+git checkout -b gowin_user_flash remotes/origin/gowin_user_flash
+

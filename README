@@ -35,7 +35,10 @@ the c_code directory.
 See https://www.youtube.com/@electronics.tinker/videos for a video
 about this-- and more videos about the Tang Nano 9K.
 
-First video about this project: https://youtu.be/cq7ETOCPIBM.
+Video about this project: https://youtu.be/uRGNqobXO5E
+
+First video about PicoRV32: https://youtu.be/cq7ETOCPIBM.
+
 
 See the channel for several later videos.
 
@@ -51,3 +54,6 @@ cd picorv32/
 git branch -a
 git checkout -b gowin_user_flash remotes/origin/gowin_user_flash
 
+Connect the Tang Nano board to a host computer via USB.  Open a
+terminal emulator on the host computer (speed 115200).  Enter "he" to
+see a list of commands.  Type all numbers in hex.

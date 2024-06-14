@@ -242,6 +242,7 @@ void help(void)
   uart_puts("wb addr value : write byte\r\n");
   uart_puts("wh addr value : write half word\r\n");
   uart_puts("ww addr value : write word\r\n");
+  uart_puts("   all numbers are hex\r\n");
 }
 
 void read_byte(unsigned int addr)
@@ -370,11 +371,12 @@ unsigned int get_hex(char **buf, unsigned int *len, unsigned int *v)
 
 void parse(char *buf, unsigned int len)
 {
-  int i;
+  int i, cmd_not_ok;
   unsigned int val1, val2;
 
+  cmd_not_ok = 1;
   eat_spaces(&buf, &len);
-  if (len < 2) return;
+  if (len < 2) goto err;
 
   for (i = 0; i < sizeof(commands)/sizeof(commands[0]); i++)
     if ((buf[0] == commands[i].cmd_string[0]) && (buf[1] == commands[i].cmd_string[1])) {
@@ -383,16 +385,23 @@ void parse(char *buf, unsigned int len)
       switch (commands[i].num_args) {
       case 0:
 	commands[i].u.func0();
+	cmd_not_ok = 0;
 	break;
       case 1:
 	eat_spaces(&buf, &len);
-	if (get_hex(&buf, &len, &val1)) commands[i].u.func1(val1);
+	if (get_hex(&buf, &len, &val1)) {
+	  commands[i].u.func1(val1);
+	  cmd_not_ok = 0;
+	}
 	break;
       case 2:
 	eat_spaces(&buf, &len);
 	if (get_hex(&buf, &len, &val1)) {
 	  eat_spaces(&buf, &len);
-	  if (get_hex(&buf, &len, &val2)) commands[i].u.func2(val1, val2);
+	  if (get_hex(&buf, &len, &val2)) {
+	    commands[i].u.func2(val1, val2);
+	    cmd_not_ok = 0;
+	  }
 	}
 	break;
       default:
@@ -400,6 +409,10 @@ void parse(char *buf, unsigned int len)
       }
       break;
     }
+
+ err:
+  if (cmd_not_ok)
+    uart_puts("illegal command, he for help\r\n");
 }
 
 #define BUFLEN 64
@@ -421,7 +434,7 @@ int main()
 
   while (1) {
     len = uart_gets(buf, BUFLEN);
-    parse(buf, len);
+    if (len != 0) parse(buf, len);
   }
 
   return 0;

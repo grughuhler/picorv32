@@ -4,7 +4,7 @@
     <Mode>Standard</Mode>
     <AoCore index="0" sample_clock="clk" trig_type="0" storage_depth="4096" window_num="1" capture_amount="4096" implementation="0" trigger_pos="3" module_name="top" force_trigger_by_falling_edge="false" capture_init_data_enabled="false">
         <SignalList>
-            <Signal capture_enable="true">mem_ready</Signal>
+            <Signal capture_enable="true">mem_valid</Signal>
             <Bus capture_enable="true" name="mem_addr[31:0]">
                 <Signal>mem_addr[31]</Signal>
                 <Signal>mem_addr[30]</Signal>
@@ -39,11 +39,10 @@
                 <Signal>mem_addr[1]</Signal>
                 <Signal>mem_addr[0]</Signal>
             </Bus>
-            <Signal capture_enable="true">mem_valid</Signal>
-            <Signal capture_enable="true">uflash0/done_flag</Signal>
-            <Signal capture_enable="true">uflash0/ready</Signal>
             <Signal capture_enable="true">uflash0/sel</Signal>
             <Signal capture_enable="true">uflash0/start_flag</Signal>
+            <Signal capture_enable="true">uflash0/done_flag</Signal>
+            <Signal capture_enable="true">uflash0/ready</Signal>
         </SignalList>
         <Triggers>
             <Trigger index="0">
@@ -89,5 +88,5 @@
             <Expression>M0</Expression>
         </Expressions>
     </AoCore>
-    <GAO_ID>1010000010101100</GAO_ID>
+    <GAO_ID>1001001101100110</GAO_ID>
 </GAO_CONFIG>

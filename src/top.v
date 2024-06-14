@@ -77,21 +77,23 @@ module top (
    wire [3:0]                 mem_wstrb;
    wire                       mem_ready;
    wire                       mem_inst;
-   wire                       leds_sel;
+   reg                        leds_sel;
    wire                       leds_ready;
    wire [31:0]                leds_data_o;
-   wire                       sram_sel;
+   reg                        sram_sel;
    wire                       sram_ready;
    wire [31:0]                sram_data_o;
-   wire                       cdt_sel;
+   reg                        cdt_sel;
    wire                       cdt_ready;
    wire [31:0]                cdt_data_o;
-   wire                       uart_sel;
+   reg                        uart_sel;
    wire [31:0]                uart_data_o;
    wire                       uart_ready;
-   wire                       uflash_sel;
+   reg                        uflash_sel;
    wire [31:0]                uflash_data_o;
    wire                       uflash_ready;
+   // default_sel causes a response when nothing else does
+   reg                        default_sel;
    wire                       clk;
 
 `ifdef USE_LA
@@ -119,23 +121,78 @@ module top (
    //    LED  80000000
    //    UART 80000008 - 8000000f
    //    CDT  80000010 - 80000014
-   assign sram_sel = mem_valid && (mem_addr < MEMBYTES);
-   assign uflash_sel = mem_valid && (mem_addr >= 32'h20000) && (mem_addr < 32'h33000);
-   assign leds_sel = mem_valid && (mem_addr == 32'h80000000);
-   assign uart_sel = mem_valid && ((mem_addr & 32'hfffffff8) == 32'h80000008);
-   assign cdt_sel = mem_valid && (mem_addr == 32'h80000010);
 
-   // Core can proceed regardless of *which* slave was targetted and is now ready.
+   always @(*)
+      if (mem_valid) begin
+         if (mem_addr < MEMBYTES) begin
+            sram_sel = 1'b1;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b0;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b0;
+            default_sel = 1'b0;
+         end
+         else if ((mem_addr >= 32'h2_0000) && (mem_addr < 32'h3_3000)) begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b1;
+            leds_sel = 1'b0;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b0;
+            default_sel = 1'b0;
+         end
+         else if (mem_addr == 32'h8000_0000) begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b1;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b0;
+            default_sel = 1'b0;
+         end
+         else if ((mem_addr >= 32'h8000_0008) && (mem_addr < 32'h8000_0010)) begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b0;
+            uart_sel = 1'b1;
+            cdt_sel = 1'b0;
+            default_sel = 1'b0;
+         end
+         else if (mem_addr == 32'h8000_0010) begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b0;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b1;
+            default_sel = 1'b0;
+         end
+         else begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b0;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b0;
+            default_sel = 1'b1;
+         end
+      end
+      else begin
+            sram_sel = 1'b0;
+            uflash_sel = 1'b0;
+            leds_sel = 1'b0;
+            uart_sel = 1'b0;
+            cdt_sel = 1'b0;
+            default_sel = 1'b0;
+      end
+
+   // Core can proceed based on which slave was targetted and is now ready.
    assign mem_ready = mem_valid &
-      (sram_ready | leds_ready | uart_ready | cdt_ready | uflash_ready);
+      (sram_ready | leds_ready | uart_ready | cdt_ready | uflash_ready | default_sel);
 
 
    // Select which slave's output data is to be fed to core.
-   assign mem_rdata = sram_sel   ? sram_data_o :
-                      leds_sel   ? leds_data_o :
-                      uart_sel   ? uart_data_o :
-                      uflash_sel ? uflash_data_o :
-                      cdt_sel    ? cdt_data_o  : 32'h0;
+   assign mem_rdata = sram_sel    ? sram_data_o :
+                      leds_sel    ? leds_data_o :
+                      uart_sel    ? uart_data_o :
+                      uflash_sel  ? uflash_data_o :
+                      cdt_sel     ? cdt_data_o  : 32'hdeadbeef;
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
 

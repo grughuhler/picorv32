@@ -48,8 +48,8 @@ module uflash
 
    // write enable is asserted when all 4 strobe bits are 1.
    assign wr_en = &wstrb;
-   // erase enable is asserted when only wstrb[0] is 1.
-   assign erase_en = (wstrb == 2'b01);
+   // erase enable is asserted only for a byte-wide write to a word-aligned address.
+   assign erase_en = (wstrb == 4'b0001);
    assign ready = (state == DONE);
 
    always @(posedge clk or negedge reset_n)

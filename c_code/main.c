@@ -264,10 +264,6 @@ void read_word(unsigned int addr)
 {
   volatile unsigned int *p = (volatile unsigned int *) addr;
 
-  uart_puts("read addr ");
-  uart_print_hex(addr);
-  uart_puts("\r\n");
-
   uart_print_hex(*p);
   uart_puts("\r\n");
 }

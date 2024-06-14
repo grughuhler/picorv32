@@ -74,5 +74,5 @@ prog.hex: prog.bin
 
 clean:
 	rm -f prog.elf prog.hex prog.bin main.o conv_to_init countdown_timer.o uart.o \
-            startup.o leds.o
+            startup.o leds.o uflash.o
 

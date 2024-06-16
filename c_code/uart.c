@@ -50,9 +50,12 @@ void uart_puts(char *s)
 
 unsigned int uart_gets(char *buf, unsigned int buf_len)
 {
-  unsigned int i = 0;
+  unsigned int i;
   char ch;
 
+  for (i = 0; i < buf_len; i++) buf[i] = 0;
+
+  i = 0;
   while ((i < buf_len - 1) && ((ch = uart_getchar()) != '\r')) {
     if ((ch == 3) || (ch == 0x7f) || (ch == 8)) {
       uart_puts("\r\ncancelled\r\n");

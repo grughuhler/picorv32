@@ -24,7 +24,7 @@
 // page. To program (write), do a 32-bit write to the address to be
 // programmed.
 
-module uflash
+module uflash #(parameter CLK_FREQ=5400000)
 (
  input wire         reset_n,
  input wire         clk,

@@ -41,27 +41,30 @@ all: prog.hex conv_to_init
 conv_to_init: conv_to_init.c
 	gcc -o conv_to_init conv_to_init.c
 
-main.o: main.c Makefile
+main.o: main.c Makefile readtime.h
 	$(CC) $(CFLAGS) -DCLK_FREQ=$(CLK_FREQ) -c main.c
 
-countdown_timer.o: countdown_timer.c
+countdown_timer.o: countdown_timer.c countdown_timer.h
 	$(CC) $(CFLAGS) -c countdown_timer.c
 
-uart.o: uart.c
+uart.o: uart.c uart.h
 	$(CC) $(CFLAGS) -c uart.c
 
-leds.o: leds.c
+leds.o: leds.c leds.h
 	$(CC) $(CFLAGS) -c leds.c
 
-uflash.o: uflash.c
+xorshift32.o: xorshift32.c xorshift32.h
+	$(CC) $(CFLAGS) -c xorshift32.c
+
+uflash.o: uflash.c uflash.h
 	$(CC) $(CFLAGS) -c uflash.c
 
 startup.o: startup.s Makefile
 	$(AS) $(ASFLAGS) -o startup.o startup.s
 
-prog.elf: startup.o main.o countdown_timer.o uart.o leds.o uflash.o
+prog.elf: startup.o main.o countdown_timer.o uart.o leds.o uflash.o xorshift32.o
 	$(CC) $(CFLAGS) -Tlink_cmd.ld -o prog.elf startup.o main.o countdown_timer.o \
-          uart.o leds.o uflash.o $(LIBS)
+          uart.o leds.o uflash.o xorshift32.o $(LIBS)
 
 prog.bin: prog.elf conv_to_init Makefile
 	$(OBJCOPY) prog.elf -O binary prog.bin
@@ -74,5 +77,6 @@ prog.hex: prog.bin
 
 clean:
 	rm -f prog.elf prog.hex prog.bin main.o conv_to_init countdown_timer.o uart.o \
-            startup.o leds.o uflash.o
+            startup.o leds.o uflash.o xorshift32.o
+
 

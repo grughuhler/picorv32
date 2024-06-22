@@ -4,45 +4,22 @@
     <Mode>Standard</Mode>
     <AoCore index="0" sample_clock="clk" trig_type="0" storage_depth="4096" window_num="1" capture_amount="4096" implementation="0" trigger_pos="3" module_name="top" force_trigger_by_falling_edge="false" capture_init_data_enabled="false">
         <SignalList>
+            <Signal capture_enable="true">mem_instr</Signal>
             <Signal capture_enable="true">mem_valid</Signal>
-            <Bus capture_enable="true" name="mem_addr[31:0]">
-                <Signal>mem_addr[31]</Signal>
-                <Signal>mem_addr[30]</Signal>
-                <Signal>mem_addr[29]</Signal>
-                <Signal>mem_addr[28]</Signal>
-                <Signal>mem_addr[27]</Signal>
-                <Signal>mem_addr[26]</Signal>
-                <Signal>mem_addr[25]</Signal>
-                <Signal>mem_addr[24]</Signal>
-                <Signal>mem_addr[23]</Signal>
-                <Signal>mem_addr[22]</Signal>
-                <Signal>mem_addr[21]</Signal>
-                <Signal>mem_addr[20]</Signal>
-                <Signal>mem_addr[19]</Signal>
-                <Signal>mem_addr[18]</Signal>
-                <Signal>mem_addr[17]</Signal>
-                <Signal>mem_addr[16]</Signal>
-                <Signal>mem_addr[15]</Signal>
-                <Signal>mem_addr[14]</Signal>
-                <Signal>mem_addr[13]</Signal>
-                <Signal>mem_addr[12]</Signal>
-                <Signal>mem_addr[11]</Signal>
-                <Signal>mem_addr[10]</Signal>
-                <Signal>mem_addr[9]</Signal>
-                <Signal>mem_addr[8]</Signal>
-                <Signal>mem_addr[7]</Signal>
-                <Signal>mem_addr[6]</Signal>
-                <Signal>mem_addr[5]</Signal>
-                <Signal>mem_addr[4]</Signal>
-                <Signal>mem_addr[3]</Signal>
-                <Signal>mem_addr[2]</Signal>
-                <Signal>mem_addr[1]</Signal>
-                <Signal>mem_addr[0]</Signal>
-            </Bus>
             <Signal capture_enable="true">uflash0/sel</Signal>
-            <Signal capture_enable="true">uflash0/start_flag</Signal>
-            <Signal capture_enable="true">uflash0/done_flag</Signal>
+            <Signal capture_enable="true">uflash0/se</Signal>
+            <Signal capture_enable="true">uflash0/erase</Signal>
+            <Signal capture_enable="true">uflash0/xe</Signal>
+            <Signal capture_enable="true">uflash0/ye</Signal>
+            <Signal capture_enable="true">uflash0/prog</Signal>
+            <Signal capture_enable="true">uflash0/nvstr</Signal>
             <Signal capture_enable="true">uflash0/ready</Signal>
+            <Bus capture_enable="true" name="uflash0/state[3:0]">
+                <Signal>uflash0/state[3]</Signal>
+                <Signal>uflash0/state[2]</Signal>
+                <Signal>uflash0/state[1]</Signal>
+                <Signal>uflash0/state[0]</Signal>
+            </Bus>
         </SignalList>
         <Triggers>
             <Trigger index="0">
@@ -88,5 +65,5 @@
             <Expression>M0</Expression>
         </Expressions>
     </AoCore>
-    <GAO_ID>1001001101100110</GAO_ID>
+    <GAO_ID>1010111100000011</GAO_ID>
 </GAO_CONFIG>

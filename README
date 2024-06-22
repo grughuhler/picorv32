@@ -13,7 +13,15 @@ components which are:
 * An LED driver that supports read and write.
 * A 32-bit count-down timer that can be read and written.
   It counts down to zero and stops.
-* A Gowin user flash controller.
+* A Gowin user flash controller implemented two ways:
+  - uflash.v uses the Gowin user flash controller soft
+    IP block.  Clock speed limit = 50 MHz.
+  - uflash_controller.v is a controller that I wrote. Clock
+    speed limit = 40 MHz.
+  You can use either controller. Just enable one of them using
+  the Gowin GUI.  uflash.v is faster, especially for slow
+  clock speeds.  I tested both with clocks speeds of 5.4 and
+  40.5 MHz (the latter being a slight overclocking for uflash.v).
 
 The project targets the Tang Nano 9K FPGA development board that
 contains a Gowin GW1NR-9LV FPGA.  It is intended to be very
@@ -44,16 +52,34 @@ See the channel for several later videos.
 
 Git Branches
 
-The main branch contains the original design as described in the first
-video.  There is a new branch for the version that uses the (much
-better) method of creating the SRAM via Verilog Inference.  To get
-this version:
+main
+
+  The main branch contains the original design as described in the first
+  video.
+
+infer_sram
+
+  Uses the (much better) method of creating the SRAM via Verilog Inference.
+
+gowin_user_flash
+
+  Adds support for Gowin integrated user flash using a Gowin soft IP
+  controller block.
+
+faster_user_flash (latest)
+
+  Adds a user flash controller that I wrote.  You can use either it or
+  the previous one.  Both remain present in the Gowin IDE project.  Just
+  enable either one of them.
+
+To get the latest project:
 
 git clone https://github.com/grughuhler/picorv32.git
 cd picorv32/
 git branch -a
-git checkout -b gowin_user_flash remotes/origin/gowin_user_flash
+git checkout -b faster_user_flash remotes/origin/faster_user_flash
 
 Connect the Tang Nano board to a host computer via USB.  Open a
 terminal emulator on the host computer (speed 115200).  Enter "he" to
 see a list of commands.  Type all numbers in hex.
+

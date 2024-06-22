@@ -9,6 +9,8 @@
 #include "uart.h"
 #include "countdown_timer.h"
 #include "uflash.h"
+#include "xorshift32.h"
+#include "readtime.h"
 
 #define MEMSIZE 512
 unsigned int mem[MEMSIZE];
@@ -42,21 +44,6 @@ int mem_test (void)
   }
 
   return(errors);
-}
-
-/* The picorv32 core implements several counters and
-   instructions to access them.  These are part of the
-   risc-v specification.  Function readtime uses one
-   of them.
-*/
-
-static inline unsigned int readtime(void)
-{
-  unsigned int val;
-  unsigned long long jj;
-  asm volatile("rdtime %0" : "=r" (val));
-  return val;
-
 }
 
 void endian_test(void)
@@ -224,17 +211,116 @@ void read_clock(void)
   uart_puts("\r\n");
 }
 
+void read_clock_ll(void)
+{
+  time_ll_t t;
+
+  t = readtime_ll();
+  uart_puts("time is ");
+  uart_print_hex(t.s.time_high);
+  uart_putchar(':');
+  uart_print_hex(t.s.time_low);
+  uart_puts("\r\n");
+}
+
+void erase_all_flash(void)
+{
+  volatile unsigned char *p = (volatile unsigned char *) 0x20000;
+  time_ll_t start, end;
+  unsigned int diff;
+  int i;
+
+  start = readtime_ll();
+  for (i = 0; i < 38; i++) {
+    *p = 0;
+    p += 2048;
+    uart_print_hex(i);
+    uart_puts("\r\n");
+  }
+  end = readtime_ll();
+
+  diff = end.time_val - start.time_val;
+  uart_puts("done in ");
+  uart_print_hex(diff);
+  uart_puts(" cycles\r\n");
+}
+
+void write_all_flash(void)
+{
+  volatile unsigned int *p = (volatile unsigned int *) 0x20000;
+  unsigned int state = 1;
+  time_ll_t start, end;
+  unsigned int diff;
+  int i;
+
+  start = readtime_ll();
+  for (i = 0; i < 19456; i++) {
+    *p++ = xorshift32(&state);
+  }
+  end = readtime_ll();
+
+  diff = end.time_val - start.time_val;
+  uart_puts("done in ");
+  uart_print_hex(diff);
+  uart_puts(" cycles\r\n");
+}
+
+void check_all_flash(void)
+{
+  volatile unsigned int *p = (volatile unsigned int *) 0x20000;
+  unsigned int state = 1;
+  int i, j, errors = 0;
+
+  for (i = 0; i < 304; i++) {
+    uart_print_hex(0x20000 + (i << 8)); /* 0x20000 + 4*64*i */
+    uart_putchar(' ');
+    for (j = 0; j < 64; j++) {
+      if (*p++ != xorshift32(&state)) {
+	errors += 1;
+	uart_putchar('x');
+      } else {
+	uart_putchar('.');
+      }
+    }
+    uart_puts("\r\n");
+  }
+  
+  uart_puts("errors = ");
+  uart_print_hex(errors);
+  uart_puts("\r\n");
+}
+
+void read2_flash(unsigned int addr)
+{
+  volatile unsigned int *p1 = (volatile unsigned int *) addr;
+  volatile unsigned int *p2 = (volatile unsigned int *) (addr + 4);
+  unsigned int v1, v2;
+
+  v1 = *p1;
+  v2 = *p2;
+
+  uart_print_hex(v1);
+  uart_putchar(' ');
+  uart_print_hex(v2);
+  uart_puts("\r\n");
+}
+
+
 void help(void)
 {
   uart_puts("ct            : test countdown timer\r\n");
   uart_puts("dc cycles     : delay for cycles\r\n");
+  uart_puts("cf            : check that uflash values match wf\r\n");
   uart_puts("ef addr       : erase page of uflash\r\n");
+  uart_puts("af            : erase all uflash\r\n");
+  uart_puts("wf            : write all uflash\r\n");
   uart_puts("et            : endian test\r\n");
   uart_puts("rl            : read LEDs\r\n");
   uart_puts("il            : increment LEDs\r\n");
   uart_puts("sl value      : set LEDs to value\r\n");
   uart_puts("mt            : memory test\r\n");
-  uart_puts("rc            : read clock\r\n");
+  uart_puts("rc            : read clock low\r\n");
+  uart_puts("rd            : read clock hi:low\r\n");
   uart_puts("he            : print help\r\n");
   uart_puts("rb addr       : read byte\r\n");
   uart_puts("rh addr       : read half word\r\n");
@@ -306,13 +392,18 @@ struct command {
 } commands[] = {
   {"ct", 0, .u.func0=countdown_timer_test},
   {"dc", 1, .u.func1=cycle_delay}, // cycles
+  {"2f", 1, .u.func1=read2_flash}, // addr
   {"ef", 1, .u.func1=erase_page_uflash}, // addr
+  {"cf", 0, .u.func0=check_all_flash},
+  {"af", 0, .u.func0=erase_all_flash},
+  {"wf", 0, .u.func0=write_all_flash},
   {"et", 0, .u.func0=endian_test},
   {"rl", 0, .u.func0=read_led},
   {"il", 0, .u.func0=incr_led},
   {"sl", 1, .u.func1=set_led},   // val
   {"mt", 0, .u.func0=memory_test},
   {"rc", 0, .u.func0=read_clock},
+  {"rd", 0, .u.func0=read_clock_ll},
   {"he", 0, .u.func0=help},
   {"rb", 1, .u.func1=read_byte}, // addr
   {"rh", 1, .u.func1=read_half}, // addr

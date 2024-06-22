@@ -1,5 +1,5 @@
-/* Copyright 2024 Grug Huhler.  License SPDX BSD-2-Clause. */
-/* 
+/* Copyright 2024 Grug Huhler.  License SPDX BSD-2-Clause.
+
 Top level module of simple SoC based on picorv32
 
 It includes:
@@ -93,7 +93,8 @@ module top (
    wire [31:0]                uflash_data_o;
    wire                       uflash_ready;
    // default_sel causes a response when nothing else does
-   reg                        default_sel;
+   wire                       default_sel;
+   reg                        default_ready;
    wire                       clk;
 
 `ifdef USE_LA
@@ -130,7 +131,6 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b0;
             cdt_sel = 1'b0;
-            default_sel = 1'b0;
          end
          else if ((mem_addr >= 32'h2_0000) && (mem_addr < 32'h3_3000)) begin
             sram_sel = 1'b0;
@@ -138,7 +138,6 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b0;
             cdt_sel = 1'b0;
-            default_sel = 1'b0;
          end
          else if (mem_addr == 32'h8000_0000) begin
             sram_sel = 1'b0;
@@ -146,7 +145,6 @@ module top (
             leds_sel = 1'b1;
             uart_sel = 1'b0;
             cdt_sel = 1'b0;
-            default_sel = 1'b0;
          end
          else if ((mem_addr >= 32'h8000_0008) && (mem_addr < 32'h8000_0010)) begin
             sram_sel = 1'b0;
@@ -154,7 +152,6 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b1;
             cdt_sel = 1'b0;
-            default_sel = 1'b0;
          end
          else if (mem_addr == 32'h8000_0010) begin
             sram_sel = 1'b0;
@@ -162,7 +159,6 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b0;
             cdt_sel = 1'b1;
-            default_sel = 1'b0;
          end
          else begin
             sram_sel = 1'b0;
@@ -170,7 +166,6 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b0;
             cdt_sel = 1'b0;
-            default_sel = 1'b1;
          end
       end
       else begin
@@ -179,13 +174,11 @@ module top (
             leds_sel = 1'b0;
             uart_sel = 1'b0;
             cdt_sel = 1'b0;
-            default_sel = 1'b0;
       end
 
    // Core can proceed based on which slave was targetted and is now ready.
    assign mem_ready = mem_valid &
-      (sram_ready | leds_ready | uart_ready | cdt_ready | uflash_ready | default_sel);
-
+      (sram_ready | leds_ready | uart_ready | cdt_ready | uflash_ready | default_ready);
 
    // Select which slave's output data is to be fed to core.
    assign mem_rdata = sram_sel    ? sram_data_o :
@@ -195,6 +188,20 @@ module top (
                       cdt_sel     ? cdt_data_o  : 32'hdeadbeef;
 
    assign leds = ~leds_data_o[5:0]; // Connect to the LEDs off the FPGA
+
+   // The default devices responds to accesses to addresses that don't
+   // map to any device.
+
+   assign default_sel = mem_valid & !sram_sel & !leds_sel & ~uart_sel & ~uflash_sel & ~cdt_sel;
+
+   always @(posedge clk or negedge reset_n)
+     if (!reset_n)
+       default_ready <= 1'b0;
+     else
+        if (default_sel)
+           default_ready <= 1'b1;
+        else
+           default_ready <= 1'b0;
 
    reset_control reset_controller
      (
@@ -228,7 +235,7 @@ module top (
       .cdt_data_o(cdt_data_o)
       );
 
-   uflash uflash0 (
+   uflash #(.CLK_FREQ(CLK_FREQ)) uflash0 (
      .reset_n(reset_n),
      .clk(clk),
      .sel(uflash_sel),

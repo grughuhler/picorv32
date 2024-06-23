@@ -521,7 +521,7 @@ int main()
   
   uart_puts("\r\nStarting, CLK_FREQ: 0x");
   uart_print_hex(CLK_FREQ);
-  uart_puts("\r\n\r\n");
+  uart_puts("\r\nenter he for a list of commands\r\n");
 
   while (1) {
     len = uart_gets(buf, BUFLEN);
